@@ -1,0 +1,23 @@
+---
+- name: Server init
+  hosts: servers
+
+  vars_prompt:
+    - name: server_init_admin
+      prompt: Choose admin username
+      private: false
+
+    - name: server_init_admin_pass
+      prompt: Enter password for the admin user
+      unsafe: true
+      private: true
+
+  roles:
+    - server_init
+
+- name: Firewall
+  hosts: servers
+  become: true
+
+  roles:
+    - firewall

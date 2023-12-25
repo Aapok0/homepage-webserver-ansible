@@ -1,0 +1,3 @@
+---
+firewall_disable_ipv6: false
+firewall_allowed_ips: []

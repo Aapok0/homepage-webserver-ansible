@@ -1,0 +1,9 @@
+---
+- name: Login
+  ansible.builtin.include_tasks: login.yml
+
+- name: Apt
+  ansible.builtin.include_tasks: apt.yml
+
+- name: Misc
+  ansible.builtin.include_tasks: misc.yml

@@ -1,0 +1,14 @@
+---
+- name: Reboot host and wait for restart
+  ansible.builtin.reboot:
+    msg: 'Reboot called by Ansible'
+    connect_timeout: 5
+    reboot_timeout: 300
+    pre_reboot_delay: 0
+    post_reboot_delay: 30
+  become: true
+
+- name: Restart SSH
+  ansible.builtin.service:
+    name: ssh
+    state: restarted

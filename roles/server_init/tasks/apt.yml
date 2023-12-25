@@ -1,0 +1,33 @@
+---
+- name: Update apt repository and cache
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+
+- name: Upgrade apt packages
+  ansible.builtin.apt:
+    upgrade: true
+  become: true
+
+- name: Make sure needed packages are installed
+  ansible.builtin.apt:
+    name: '{{ item }}'
+  with_items:
+    - cron
+    - curl
+    - grep
+    - htop
+    - less
+    - rsync
+    - tmux
+    - ufw
+    - vim
+  become: true
+
+- name: Check if a reboot is needed
+  register: reboot_required
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+    get_checksum: false
+  changed_when: reboot_required.stat.exists
+  notify: Reboot host and wait for restart

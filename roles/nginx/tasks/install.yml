@@ -1,0 +1,10 @@
+---
+- name: Add PPA for Nginx and update cache
+  apt_repository:
+    repo: ppa:nginx/stable
+    state: present
+    update_cache: true
+
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx

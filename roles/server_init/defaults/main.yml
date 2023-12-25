@@ -1,0 +1,3 @@
+---
+server_init_admin: admin
+server_init_admin_pubkey: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_rsa.pub') }}"

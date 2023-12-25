@@ -1,2 +1,6 @@
 # Ignore inventory files to keep IPs secret
 inventory/*
+
+# Ignore host_vars and group_vars (might have sensitive information)
+host_vars/
+group_vars

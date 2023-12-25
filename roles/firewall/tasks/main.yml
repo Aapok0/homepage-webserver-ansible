@@ -1,0 +1,29 @@
+---
+- name: Disable UFW ipv6
+  ansible.builtin.lineinfile:
+    dest: /etc/default/ufw
+    regexp: '^IPV6='
+    line: IPV6=no
+  when: firewall_disable_ipv6
+
+- name: Allow SSH from specified addresses
+  community.general.ufw:
+    rule: allow
+    to_port: 22
+    from_ip: '{{ item }}'
+  loop: '{{ firewall_allowed_ips }}'
+
+# TODO: allow ping (ICMP)
+
+- name: Open ports
+  community.general.ufw:
+    rule: allow
+    to_port: '{{ item.port }}'
+    proto: '{{ item.proto }}'
+  with_items: '{{ firewall_ufw_rules }}'
+
+- name: Enable UFW and deny incoming as policy
+  community.general.ufw:
+    state: enabled
+    default: deny
+    direction: incoming
