@@ -15,9 +15,11 @@
   with_items:
     - cron
     - curl
+    - fzf
     - grep
     - htop
     - less
+    - ripgrep
     - rsync
     - tmux
     - ufw
