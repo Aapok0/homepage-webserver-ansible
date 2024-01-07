@@ -1,0 +1,7 @@
+---
+- name: Firewall
+  hosts: servers
+  become: true
+
+  roles:
+    - firewall

@@ -1,0 +1,21 @@
+---
+- name: Remove default vhost file
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Add app vhost config file
+  ansible.builtin.template:
+    src: templates/vhost.j2
+    dest: /etc/nginx/sites-available/{{ nginx.domain | default('app') }}
+    force: true
+    owner: nginx
+    group: nginx
+    mode: '0644'
+
+- name: Enable app
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/{{ nginx.domain | default('app') }}
+    dest: /etc/nginx/sites-enabled/{{ nginx.domain | default('app') }}
+    state: link
+  notify: Reload Nginx

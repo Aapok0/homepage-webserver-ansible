@@ -1,0 +1,39 @@
+server {
+    listen 80;
+{% if nginx_listen_ipv6 %}
+    listen [::]:80;
+{% endif %}
+
+{% if nginx.domain is defined %}
+    server_name {{ nginx.domain }};
+{% else %}
+    server_name _;
+{% endif %}
+
+{% for app in nginx.apps %}
+{% if app.main %}
+    location / {
+        return 301 $scheme://$host/v2/;
+    }
+{% endif %}
+{% endfor %}
+
+{% for app in nginx.apps %}
+    location /{{ app.location }}/ {
+        root /var/www/{{ nginx.domain | default('app') }};
+        index index.html index.htm index.php;
+
+{% if app.php %}
+        try_files $uri $uri/ /index.php?$query_string =404;
+
+        location ~ \.php {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/run/php/php-fpm.sock;
+        }
+{% else %}
+        try_files $uri $uri/ =404;
+{% endif %}
+    }
+
+{% endfor %}
+}

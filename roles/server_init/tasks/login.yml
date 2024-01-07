@@ -5,13 +5,15 @@
     groups: sudo,adm
     append: true
     shell: /bin/bash
-    password: '{{ server_init_admin_pass }}'
+    password: "{{ server_init_admin_pass | password_hash('sha512') }}"
+  become: true
   when: ansible_user_id != lookup('ansible.builtin.vars', 'server_init_admin')
 
 - name: Add SSH key for admin user {{ server_init_admin }}
   ansible.posix.authorized_key:
     user: '{{ server_init_admin }}'
     key: '{{ server_init_admin_pubkey }}'
+  become: true
   when: ansible_user_id != lookup('ansible.builtin.vars', 'server_init_admin')
 
 - name: Disable root password

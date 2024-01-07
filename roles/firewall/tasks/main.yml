@@ -13,8 +13,6 @@
     from_ip: '{{ item }}'
   loop: '{{ firewall_allowed_ips }}'
 
-# TODO: allow ping (ICMP)
-
 - name: Open ports
   community.general.ufw:
     rule: allow

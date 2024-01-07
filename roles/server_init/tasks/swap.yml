@@ -1,0 +1,62 @@
+---
+- name: Check, if swap file exists
+  ansible.builtin.stat:
+    path: /swapfile
+  register: swapfile
+
+- name: Turn off swap space, if swap file exists and is different size than needed
+  ansible.builtin.command:
+    cmd: swapoff -av
+  become: true
+  when: (swapfile.stat.exists) and (swapfile.stat.size != lookup('ansible.builtin.vars', 'server_init_swapfile_size'))
+  changed_when: false
+
+- name: Remove swap file, if it exists and is different size than needed
+  ansible.builtin.file:
+    path: /swapfile
+    state: absent
+  become: true
+  when: (swapfile.stat.exists) and (swapfile.stat.size != lookup('ansible.builtin.vars', 'server_init_swapfile_size'))
+
+- name: Create swap file
+  ansible.builtin.command:
+    cmd: fallocate -l {{ server_init_swapfile_size }} /swapfile
+    creates: /swapfile
+  become: true
+
+- name: Determine swapfile permissions
+  ansible.builtin.file:
+    path: /swapfile
+    owner: root
+    group: root
+    mode: '0600'
+  become: true
+
+- name: Format swapfile
+  ansible.builtin.command:
+    cmd: mkswap /swapfile
+  become: true
+  when: (not swapfile.stat.exists) or (swapfile.stat.size != lookup('ansible.builtin.vars', 'server_init_swapfile_size'))
+  changed_when: false
+
+- name: Write swapfile into fstab
+  ansible.posix.mount:
+    path: none
+    src: /swapfile
+    fstype: swap
+    opts: sw
+    state: present
+  become: true
+
+- name: Turn on swap space
+  ansible.builtin.command:
+    cmd: swapon -a
+  become: true
+  when: (not swapfile.stat.exists) or (swapfile.stat.size != lookup('ansible.builtin.vars', 'server_init_swapfile_size'))
+  changed_when: false
+
+- name: Set swappiness
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: '{{ server_init_swappiness }}'
+  become: true

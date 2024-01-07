@@ -16,6 +16,7 @@
     - cron
     - curl
     - fzf
+    - git
     - grep
     - htop
     - less
@@ -26,10 +27,10 @@
     - vim
   become: true
 
-- name: Check if a reboot is needed
-  register: reboot_required
+- name: Check, if a reboot is needed
   ansible.builtin.stat:
     path: /var/run/reboot-required
     get_checksum: false
+  register: reboot_required
   changed_when: reboot_required.stat.exists
   notify: Reboot host and wait for restart

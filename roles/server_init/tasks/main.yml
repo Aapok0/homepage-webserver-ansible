@@ -1,9 +1,12 @@
 ---
-- name: Login
+- name: Add admin user and secure login
   ansible.builtin.include_tasks: login.yml
 
-- name: Apt
+- name: Install required packages
   ansible.builtin.include_tasks: apt.yml
 
-- name: Misc
+- name: Add swap space
+  ansible.builtin.include_tasks: swap.yml
+
+- name: Miscellaneous tasks
   ansible.builtin.include_tasks: misc.yml

@@ -1,10 +1,58 @@
 ---
-- name: Add PPA for Nginx and update cache
-  apt_repository:
-    repo: ppa:nginx/stable
-    state: present
+# - name: Add PPA for Nginx and update cache
+#  apt_repository:
+#    repo: ppa:nginx/stable
+#    state: present
+#    update_cache: true
+
+- name: Update apt repository and cache
+  ansible.builtin.apt:
     update_cache: true
 
-- name: Install nginx
+- name: Make sure dependencies required for adding nodejs repo are installed
   ansible.builtin.apt:
-    name: nginx
+    name: '{{ item }}'
+  with_items:
+    - ca-certificates
+    - curl
+    - gnupg
+
+- name: Install the nodejs repository
+  ansible.builtin.shell:
+    cmd: set -o pipefail && curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    creates: /etc/apt/preferences.d/nodejs
+
+- name: Install Nginx and required other packages
+  ansible.builtin.apt:
+    name: '{{ item }}'
+  with_items:
+    - nginx
+    - php
+    - php-fpm
+    - nodejs
+
+- name: Install pnpm
+  ansible.builtin.command:
+    cmd: npm install -g pnpm
+    creates: /usr/bin/pnpm
+
+- name: Change ownership of default html root directory
+  ansible.builtin.file:
+    path: /var/www/html
+    owner: nginx
+    group: nginx
+    recurse: true
+
+- name: Change ownership of Nginx configuration directory
+  ansible.builtin.file:
+    path: /etc/nginx/
+    owner: nginx
+    group: nginx
+    recurse: true
+
+- name: Change ownership of Nginx log directory
+  ansible.builtin.file:
+    path: /var/log/nginx/
+    owner: nginx
+    group: nginx
+    recurse: true
