@@ -60,3 +60,13 @@
     name: vm.swappiness
     value: '{{ server_init_swappiness }}'
   become: true
+
+- name: Add swappiness setting to sysctl configuration
+  ansible.builtin.lineinfile:
+    dest: /etc/sysctl.conf
+    regexp: '^#?vm.swappiness'
+    line: vm.swappiness={{ server_init_swappiness }}
+  become: true
+
+# - name: Add swappiness setting to sysctl configuration
+# /etc/sysctl.conf -> vm.swappiness='{{ server_init_swappiness }}'

@@ -1,7 +1,7 @@
 ---
 - name: Create Nginx user
   ansible.builtin.user:
-    name: nginx
+    name: '{{ nginx_user }}'
     system: true
     home: /nonexistent
     shell: /usr/sbin/nologin
@@ -14,6 +14,20 @@
 
 - name: Add vhost file and enable app
   ansible.builtin.include_tasks: vhost.yml
+
+- name: Backup default configuration file
+  ansible.builtin.command:
+    cmd: cp -p /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
+    creates: /etc/nginx/nginx.conf.bak
+
+- name: Add managed configuration file
+  ansible.builtin.template:
+    src: templates/nginx.conf.v2
+    dest: /etc/nginx/nginx.conf
+    force: true
+    owner: nginx
+    group: nginx
+    mode: '0644'
 
 - name: Validate Nginx configuration
   ansible.builtin.command:

@@ -1,0 +1,72 @@
+user {{ nginx_user }};
+worker_processes {{ nginx_worker_processes }};
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+    worker_connections {{ nginx_worker_connections }};
+{% if nginx_events_use is defined %}
+    use {{ nginx_events_use }};
+{% endif %}
+    multi_accept {{ nginx_events_multi_accept }};
+}
+
+http {
+
+    ##
+    # Basic Settings
+    ##
+
+    sendfile {{ nginx_sendfile }};
+    sendfile_max_chunk {{ nginx_sendfile_max_chunk }};
+    tcp_nopush {{ nginx_tcp_nopush }};
+    types_hash_max_size {{ nginx_types_hash_max_size }};
+    server_tokens {{ nginx_server_tokens }};
+
+{% if nginx_server_names_hash_bucket_size is defined %}
+    server_names_hash_bucket_size {{ nginx_server_names_hash_bucket_size }};
+{% endif %}
+    server_name_in_redirect {{ nginx_server_name_in_redirect }};
+
+    include /etc/nginx/mime.types;
+    default_type {{ nginx_default_type }};
+
+    ##
+    # SSL Settings
+    ##
+
+    ssl_protocols {{ nginx_ssl_protocols }};
+    ssl_prefer_server_ciphers {{ nginx_ssl_prefer_server_ciphers }};
+{% if nginx_ssl_ciphers is defined %}
+    ssl_ciphers {{ nginx_ssl_ciphers }};
+{% endif %}
+
+    ##
+    # Logging Settings
+    ##
+
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log {{ nginx_error_debug_level }};
+
+    ##
+    # Gzip Settings
+    ##
+
+    gzip {{ nginx_gzip }};
+
+    gzip_vary {{ nginx_gzip_vary }};
+{% if nginx_gzip_proxied is defined %}
+    gzip_proxied {{ nginx_gzip_proxied }};
+{% endif %}
+    gzip_comp_level {{ nginx_gzip_comp_level }};
+    gzip_buffers {{ nginx_gzip_buffers }};
+    gzip_http_version {{ nginx_gzip_http_version }};
+    gzip_types {{ nginx_gzip_types }}
+
+    ##
+    # Virtual Host Configs
+    ##
+
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}

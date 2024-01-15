@@ -4,41 +4,41 @@
     path: /opt/{{ item.name }}
     state: directory
     mode: '0755'
-  loop: '{{ nginx.apps }}'
+  loop: '{{ nginx_apps }}'
 
-- name: Make sure app Nginx directories are present
+- name: Make sure app nginx directories are present
   ansible.builtin.file:
-    path: /var/www/{{ nginx.domain | default('app') }}/{{ item.location }}
+    path: /var/www/{{ nginx_domain | default('app') }}/{{ item.location }}
     state: directory
     owner: nginx
     group: nginx
     mode: '0755'
-  loop: '{{ nginx.apps }}'
+  loop: '{{ nginx_apps }}'
 
 - name: Clone app with git
   ansible.builtin.git:
     repo: '{{ item.repo }}'
     dest: /opt/{{ item.name }}
   register: repository
-  loop: '{{ nginx.apps }}'
+  loop: '{{ nginx_apps }}'
 
 - name: Ensure app directories are have 755 permissions
   ansible.builtin.command:
     cmd: find /opt/{{ item.name }} -type d -exec chmod 0755 {} \;
-  loop: '{{ nginx.apps }}'
+  loop: '{{ nginx_apps }}'
   changed_when: repository is changed
 
 - name: Ensure app files have 644 permissions
   ansible.builtin.command:
     cmd: find /opt/{{ item.name }} -type f -exec chmod 0644 {} \;
-  loop: '{{ nginx.apps }}'
+  loop: '{{ nginx_apps }}'
   changed_when: repository is changed
 
 - name: Install app dependencies
   ansible.builtin.command:
     cmd: pnpm install
     chdir: /opt/{{ item.name }}
-  loop: '{{ nginx.apps }}'
+  loop: '{{ nginx_apps }}'
   when: item.npm
   changed_when: repository is changed
 
@@ -46,23 +46,23 @@
   ansible.builtin.command:
     cmd: pnpm run {{ item.build_command }}
     chdir: /opt/{{ item.name }}
-  loop: '{{ nginx.apps }}'
+  loop: '{{ nginx_apps }}'
   when: item.sass
   changed_when: repository is changed
 
-- name: Copy app files to the app Nginx directory
+- name: Copy app files to the app nginx directory
   ansible.posix.synchronize:
     src: /opt/{{ item.name }}/
-    dest: /var/www/{{ nginx.domain | default('app') }}/{{ item.location }}/
+    dest: /var/www/{{ nginx_domain | default('app') }}/{{ item.location }}/
     perms: true
   delegate_to: '{{ inventory_hostname }}'
   notify: Restart Nginx
-  loop: '{{ nginx.apps }}'
+  loop: '{{ nginx_apps }}'
   changed_when: repository is changed
 
-- name: Change ownership of app Nginx directories
+- name: Change ownership of app nginx directories
   ansible.builtin.file:
-    path: /var/www/{{ nginx.domain | default('app') }}
+    path: /var/www/{{ nginx_domain | default('app') }}
     owner: nginx
     group: nginx
     recurse: true

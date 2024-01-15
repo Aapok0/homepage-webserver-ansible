@@ -1,2 +1,36 @@
 ---
+# Configuration
+nginx_user: nginx
+nginx_worker_processes: auto
+
+## Configuration - Events
+nginx_worker_connections: 1024
+nginx_events_multi_accept: 'on'
+
+## Configuration - HTTP
+### HTTP - Basic Settings
+nginx_sendfile: 'on'
+nginx_sendfile_max_chunk: 2m
+nginx_tcp_nopush: 'on'
+nginx_types_hash_max_size: 1024
+nginx_server_tokens: 'on'
+nginx_server_name_in_redirect: 'on'
+nginx_default_type: application/octet-stream
+
+### SSL Settings
+nginx_ssl_protocols: 'TLSv1.2 TLSv1.3'
+nginx_ssl_prefer_server_ciphers: 'on'
+
+### Logging Settings
+nginx_error_debug_level: error
+
+### Gzip Settings
+nginx_gzip: 'on'
+nginx_gzip_vary: 'off'
+nginx_gzip_comp_level: 1
+nginx_gzip_buffers: '16 8k'
+nginx_gzip_http_version: 1.1
+nginx_gzip_types: 'text/html text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript'
+
+# Vhost
 nginx_listen_ipv6: true

@@ -4,23 +4,23 @@ server {
     listen [::]:80;
 {% endif %}
 
-{% if nginx.domain is defined %}
-    server_name {{ nginx.domain }};
+{% if nginx_domain is defined %}
+    server_name {{ nginx_domain }};
 {% else %}
     server_name _;
 {% endif %}
 
-{% for app in nginx.apps %}
+{% for app in nginx_apps %}
 {% if app.main %}
     location / {
-        return 301 $scheme://$host/v2/;
+        return 301 $scheme://$host/{{ app.location }}/;
     }
 {% endif %}
 {% endfor %}
 
-{% for app in nginx.apps %}
+{% for app in nginx_apps %}
     location /{{ app.location }}/ {
-        root /var/www/{{ nginx.domain | default('app') }};
+        root /var/www/{{ nginx_domain | default('app') }};
         index index.html index.htm index.php;
 
 {% if app.php %}
