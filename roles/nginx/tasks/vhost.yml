@@ -7,15 +7,16 @@
 - name: Add app vhost config file
   ansible.builtin.template:
     src: templates/vhost.j2
-    dest: /etc/nginx/sites-available/{{ nginx_domain | default('app') }}
+    dest: /etc/nginx/sites-available/{{ nginx_domains | first | default('app') }}
     force: true
     owner: nginx
     group: nginx
     mode: '0644'
+  notify: Reload Nginx
 
 - name: Enable app
   ansible.builtin.file:
-    src: /etc/nginx/sites-available/{{ nginx_domain | default('app') }}
-    dest: /etc/nginx/sites-enabled/{{ ngin_domain | default('app') }}
+    src: /etc/nginx/sites-available/{{ nginx_domains | first | default('app') }}
+    dest: /etc/nginx/sites-enabled/{{ nginx_domains | first | default('app') }}
     state: link
   notify: Reload Nginx

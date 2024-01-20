@@ -8,7 +8,7 @@
 
 - name: Make sure app nginx directories are present
   ansible.builtin.file:
-    path: /var/www/{{ nginx_domain | default('app') }}/{{ item.location }}
+    path: /var/www/{{ nginx_domains | first | default('app') }}/{{ item.location }}
     state: directory
     owner: nginx
     group: nginx
@@ -53,7 +53,7 @@
 - name: Copy app files to the app nginx directory
   ansible.posix.synchronize:
     src: /opt/{{ item.name }}/
-    dest: /var/www/{{ nginx_domain | default('app') }}/{{ item.location }}/
+    dest: /var/www/{{ nginx_domains | first | default('app') }}/{{ item.location }}/
     perms: true
   delegate_to: '{{ inventory_hostname }}'
   notify: Restart Nginx
@@ -62,7 +62,7 @@
 
 - name: Change ownership of app nginx directories
   ansible.builtin.file:
-    path: /var/www/{{ nginx_domain | default('app') }}
+    path: /var/www/{{ nginx_domains | first | default('app') }}
     owner: nginx
     group: nginx
     recurse: true

@@ -15,6 +15,9 @@
 - name: Add vhost file and enable app
   ansible.builtin.include_tasks: vhost.yml
 
+- name: Generate certificate and setup automatic renewal
+  ansible.builtin.include_tasks: certbot.yml
+
 - name: Backup default configuration file
   ansible.builtin.command:
     cmd: cp -p /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak

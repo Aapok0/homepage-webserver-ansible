@@ -1,0 +1,26 @@
+---
+- name: Check if file exists
+  ansible.builtin.stat:
+    path: '/etc/letsencrypt/live/{{ nginx_domains | first }}'
+  register: cert_exists
+
+- name: Generate SSL/TLS certificate for domain/s
+  ansible.builtin.command:
+    cmd: 'certbot --nginx -d {{ nginx_domains | join(",") }} -m {{ nginx_cert_email }} --non-interactive --agree-tos'
+    creates: '/etc/letsencrypt/live/{{ nginx_domains | first }}'
+  notify: Restart nginx
+  when: nginx_domains is defined and nginx_certs
+
+- name: Automatically renew certificate for domain/s with a cron job
+  ansible.builtin.cron:
+    name: Renew certificates
+    minute: 0
+    hour: 12
+    job: /usr/bin/certbot renew -q
+  when: nginx_domains is defined and nginx_certs
+
+- name: Install SSL/TLS certificate for domain/s
+  ansible.builtin.command:
+    cmd: 'certbot install --cert-name {{ nginx_domains | first }}'
+  when: cert_exists.stat.exists
+

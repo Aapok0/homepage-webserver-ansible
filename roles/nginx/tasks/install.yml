@@ -28,8 +28,22 @@
   with_items:
     - nginx
     - php
-    - php-fpm
+    - php8.1-fpm
     - nodejs
+    - certbot
+    - python3-certbot-nginx
+
+- name: Change php directory ownership to nginx
+  ansible.builtin.file:
+    path: /run/php
+    owner: nginx
+    group: nginx
+
+- name: Make sure php socket has right ownership
+  ansible.builtin.file:
+    path: /run/php/php8.1-fpm.sock
+    owner: nginx
+    group: nginx
 
 - name: Install pnpm
   ansible.builtin.command:

@@ -1,13 +1,28 @@
+{% if nginx_domains is defined %}
+{% for domain in nginx_domains %}
+{% if loop.index == 1 %}
+##
+# {{ domain }} - The main domain used in the app
+##
+
 server {
-    listen 80;
+{% if nginx_certs %}
+    listen 443 ssl;
+{% else %}
+    listen 443;
+{% endif %}
 {% if nginx_listen_ipv6 %}
-    listen [::]:80;
+{% if nginx_certs %}
+    listen [::]:443 ssl;
+{% else %}
+    listen [::]:443;
+{% endif %}
 {% endif %}
 
-{% if nginx_domain is defined %}
-    server_name {{ nginx_domain }};
-{% else %}
-    server_name _;
+    server_name {{ domain }};
+{% if nginx_certs %}
+    ssl_certificate /etc/letsencrypt/live/{{ domain }}/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/{{ domain }}/privkey.pem; # managed by Certbot
 {% endif %}
 
 {% for app in nginx_apps %}
@@ -20,7 +35,7 @@ server {
 
 {% for app in nginx_apps %}
     location /{{ app.location }}/ {
-        root /var/www/{{ nginx_domain | default('app') }};
+        root /var/www/{{ nginx_domains | first | default('app') }};
         index index.html index.htm index.php;
 
 {% if app.php %}
@@ -28,7 +43,7 @@ server {
 
         location ~ \.php {
             include snippets/fastcgi-php.conf;
-            fastcgi_pass unix:/run/php/php-fpm.sock;
+            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
         }
 {% else %}
         try_files $uri $uri/ =404;
@@ -37,3 +52,83 @@ server {
 
 {% endfor %}
 }
+{% endif %}
+{% if loop.index != 1 %}
+##
+# {{ domain }} - Secondary domain that is redirected to main domain
+##
+
+server {
+{% if nginx_certs %}
+    listen 443 ssl;
+{% if nginx_listen_ipv6 %}
+    listen [::]:443 ssl;
+{% endif %}
+{% endif %}
+
+    server_name {{ domain }};
+{% if nginx_certs %}
+    ssl_certificate /etc/letsencrypt/live/{{ nginx_domains | first }}/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/{{ nginx_domains | first }}/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+{% endif %}
+    return https://{{ nginx_domains | first }}$request_uri;
+}
+{% endif %}
+
+# Redirect http to https
+
+server {
+    if ($host = {{ domain }}) {
+        return 301 https://$host$request_uri;
+    }
+
+    listen 80;
+
+    server_name www.aapokokko.com;
+    return 404;
+}
+
+{% endfor %}
+{% else %}
+##
+# Localhost
+##
+
+server {
+    listen 80;
+{% if nginx_listen_ipv6 %}
+    listen [::]:80;
+{% endif %}
+
+    server_name _;
+
+{% for app in nginx_apps %}
+{% if app.main %}
+    location / {
+        return 301 $scheme://$host/{{ app.location }}/;
+    }
+{% endif %}
+{% endfor %}
+
+{% for app in nginx_apps %}
+    location /{{ app.location }}/ {
+        root /var/www/{{ nginx_domains | first | default('app') }};
+        index index.html index.htm index.php;
+
+{% if app.php %}
+        try_files $uri $uri/ /index.php?$query_string =404;
+
+        location ~ \.php {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+        }
+{% else %}
+        try_files $uri $uri/ =404;
+{% endif %}
+    }
+
+{% endfor %}
+}
+{% endif %}
