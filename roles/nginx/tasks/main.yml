@@ -37,7 +37,7 @@
     cmd: nginx -t
   changed_when: false
 
-- name: Ensure nginx service is running as configured.
+- name: Ensure nginx service is running as configured
   ansible.builtin.service:
     name: nginx
     state: started

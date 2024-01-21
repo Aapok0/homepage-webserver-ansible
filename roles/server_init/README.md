@@ -1,38 +1,73 @@
-Role Name
+Server init
 =========
 
-A brief description of the role goes here.
+A role that initializes server, when first taken into use.
+- Adds admin user with ssh key, disables root password, password login and root login
+  - Only adds admin user, if run as root or given admin name is different than ansible user
+  - Does the disable tasks only when running as user other than root
+  - If using existing admin user, make sure the user already has public ssh key in the server
+- Updates apt cache and upgrades packages, enables/disables unattended upgrades and checks if reboot is needed
+- Adds swap space, modifies it and the swappiness setting
+- Sets vim as default editor
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+Following collections are required:
+- ansible.posix
+- community.general
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
-
-Dependencies
-------------
-
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+```yaml
+# If you want to create a new admin user, defaults to <user_home>/.ssh/id_rsa.pub
+server_init_admin_pubkey: /path/to/ssh_pubkey
+# Extra packages you want, by default following are installed: cron, curl, git, grep, less, rsync, unattended-upgrades and vim
+server_init_extra_packages:
+  - fzf
+  - htop
+  - ncdu
+  - ripgrep
+  - tmux
+# Whether unattended-upgrades is enabled, default is true
+server_init_auto_upgrades: true
+# Swap space you need in the server in bytes
+server_init_swapfile_size: 1500000000
+# Tendency to move processes from physical memory to swap space
+server_init_swappiness: 60
+```
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+```yaml
+---
+- name: Server init
+  hosts: servers
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+  vars_prompt:
+    - name: server_init_admin
+      prompt: Choose admin username
+      private: false
+
+    - name: server_init_admin_pass
+      prompt: Enter password for the admin user
+      unsafe: true
+      private: true
+
+  roles:
+    - server_init
+```
+
+- Playbook will ask admin user name and a password for it
+  - If first playbook run is done with root user, playbook will create admin user, but will not disable root and password login yet
+    - Remember to give public ssh key with the variable `server_init_admin_pubkey`!
+    - Second playbook run with the newly made admin user will disable root and password login (give the same user when prompted)
+  - If you already have a user in the server with public ssh key, you can just give that user when prompted and the role will not create a new user and will disable root and password login
+    - No need to run the playbook a second time unless you make changes to variables
 
 License
 -------
 
-BSD
-
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+MIT

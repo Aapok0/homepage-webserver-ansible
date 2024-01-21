@@ -1,3 +1,14 @@
 ---
-server_init_admin: admin
 server_init_admin_pubkey: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/id_rsa.pub') }}"
+server_init_default_packages:
+  - cron
+  - curl
+  - git
+  - grep
+  - less
+  - rsync
+  - unattended-upgrades
+  - vim
+server_init_auto_upgrades: true
+server_init_swapfile_size: 1000000000
+server_init_swappiness: 60

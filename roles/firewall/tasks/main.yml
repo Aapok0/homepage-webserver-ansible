@@ -1,10 +1,24 @@
 ---
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    update_cache: true
+
 - name: Disable UFW ipv6
   ansible.builtin.lineinfile:
     dest: /etc/default/ufw
     regexp: '^IPV6='
     line: IPV6=no
   when: firewall_disable_ipv6
+  notify: Reload UFW
+
+- name: Enable UFW ipv6
+  ansible.builtin.lineinfile:
+    dest: /etc/default/ufw
+    regexp: '^IPV6='
+    line: IPV6=yes
+  when: not firewall_disable_ipv6
+  notify: Reload UFW
 
 - name: Allow SSH from specified addresses
   community.general.ufw:
@@ -12,6 +26,7 @@
     to_port: 22
     from_ip: '{{ item }}'
   loop: '{{ firewall_allowed_ips }}'
+  notify: Reload UFW
 
 - name: Open ports
   community.general.ufw:
@@ -19,6 +34,7 @@
     to_port: '{{ item.port }}'
     proto: '{{ item.proto }}'
   with_items: '{{ firewall_ufw_rules }}'
+  notify: Reload UFW
 
 - name: Enable UFW and deny incoming as policy
   community.general.ufw:

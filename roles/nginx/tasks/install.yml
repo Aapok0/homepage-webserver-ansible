@@ -27,6 +27,7 @@
     name: '{{ item }}'
   with_items:
     - nginx
+    - git
     - php
     - php8.1-fpm
     - nodejs

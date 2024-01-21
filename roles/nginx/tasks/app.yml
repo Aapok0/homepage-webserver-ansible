@@ -22,7 +22,7 @@
   register: repository
   loop: '{{ nginx_apps }}'
 
-- name: Ensure app directories are have 755 permissions
+- name: Ensure app directories have 755 permissions
   ansible.builtin.command:
     cmd: find /opt/{{ item.name }} -type d -exec chmod 0755 {} \;
   loop: '{{ nginx_apps }}'

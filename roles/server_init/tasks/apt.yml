@@ -9,23 +9,39 @@
     upgrade: true
   become: true
 
+- name: Combine variable list and static list
+  ansible.builtin.set_fact:
+    combined_packages: '{{ server_init_default_packages + server_init_extra_packages }}'
+
 - name: Make sure needed packages are installed
   ansible.builtin.apt:
     name: '{{ item }}'
-  with_items:
-    - cron
-    - curl
-    - fzf
-    - git
-    - grep
-    - htop
-    - less
-    - ripgrep
-    - rsync
-    - tmux
-    - ufw
-    - vim
+  with_items: '{{ combined_packages }}'
   become: true
+
+- name: Enable unattended upgrades
+  ansible.builtin.debconf:
+    name: unattended-upgrades
+    question: unattended-upgrades/enable_auto_updates
+    vtype: boolean
+    value: 'true'
+  register: unattended_enabled
+  when: server_init_auto_upgrades
+
+- name: Disable unattended upgrades
+  ansible.builtin.debconf:
+    name: unattended-upgrades
+    question: unattended-upgrades/enable_auto_updates
+    vtype: boolean
+    value: 'false'
+  register: unattended_disabled
+  when: not server_init_auto_upgrades
+
+- name: Reconfigure unattended-upgrades
+  ansible.builtin.command:
+    cmd: dpkg-reconfigure -f noninteractive unattended-upgrades
+  changed_when: true
+  when: unattended_enabled.changed or unattended_disabled.changed
 
 - name: Check, if a reboot is needed
   ansible.builtin.stat:

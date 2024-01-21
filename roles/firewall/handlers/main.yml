@@ -1,2 +1,4 @@
 ---
-# handlers file for firewall
+- name: Reload UFW
+  community.general.ufw:
+    state: reloaded

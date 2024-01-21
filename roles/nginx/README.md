@@ -1,38 +1,107 @@
-Role Name
+Nginx
 =========
 
-A brief description of the role goes here.
+A role that installs nginx webserver with configurations and adds apps to be hosted.
+- Creates nginx user and changes ownership of all needed files and directories for nginx
+- Installs nginx and its dependencies, app dependencies like nodejs, pnpm and php and certbot
+- Clones apps with git, installs npm packages (if needed), builds app with npm (if needed) and copies app files to nginx vhost path
+- Disables default vhost file and adds templated vhost configuration of apps to sites-available and enables the apps by creating symlink to sites-enabled
+- Runs certbot to add certificate for give domains and sets up auto renewal
+- Backs up default configuration file, adds templated configuration file and checks validity
+- Starts nginx service
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+Following collections are required:
+- ansible.posix
+- community.general
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+```yaml
+---
+# Configuration -> most of the following are the default values
+nginx_user: nginx
+nginx_worker_processes: auto
 
-Dependencies
-------------
+## Configuration - Events
+nginx_worker_connections: 1024
+nginx_events_use: epoll # if not set, nginx will set according to server's OS
+nginx_events_multi_accept: 'on'
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+## Configuration - HTTP
+### HTTP - Basic Settings
+nginx_sendfile: 'on'
+nginx_sendfile_max_chunk: 2m
+nginx_tcp_nopush: 'on'
+nginx_types_hash_max_size: 1024
+nginx_server_tokens: 'on'
+nginx_server_name_in_redirect: 'on'
+server_names_hash_bucket_size # if not set, nginx will set default according to server
+nginx_default_type: application/octet-stream
+
+### SSL Settings
+nginx_ssl_protocols: 'TLSv1.2 TLSv1.3'
+nginx_ssl_prefer_server_ciphers: 'on'
+nginx_ssl_ciphers: 'HIGH:!aNULL:!MD5' # if not set, nginx will set default
+
+### Logging Settings
+nginx_error_debug_level: error
+
+### Gzip Settings
+nginx_gzip: 'on'
+nginx_gzip_vary: 'off'
+nginx_gzip_proxied: 'off' # if not set, nginx will set default
+nginx_gzip_comp_level: 1
+nginx_gzip_buffers: '16 8k'
+nginx_gzip_http_version: 1.1
+nginx_gzip_types: 'text/html text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript'
+
+# Vhost
+nginx_certs: true # Should be set false for first run to generate valid nginx config
+nginx_domains:
+  - www.example.com # First in the list will be used as main domain
+  - example.com # The rest of the domains will be redirected to main domain
+nginx_cert_email: name@example.com
+nginx_listen_ipv6: false
+nginx_apps:
+  - name: example
+    main: true # App that will be served when using root of the domain
+    repo: https://github.com/Aapok0/homepage.git
+    location: example # Path of app -> www.example.com/example/
+    npm: true # The tasks use pnpm
+    sass: true
+    php: true
+    build_command: css-build # pnpm build command
+  - name: example2
+    main: false
+    repo: https://github.com/Aapok0/homepage-bulma.git
+    location: example2 # Path of app -> www.example.com/example2/
+    npm: false
+    sass: false
+    php: true
+```
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+```yaml
+---
+- name: Nginx
+  hosts: nginx
+  become: true
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+  roles:
+    - nginx
+```
+
+- If you are adding certificates, first set nginx_certs to false.
+- Run nginx.yml playbook (first with check and then without, if evertyhing looks fine).
+- If you are adding certificates, now set nginx_certs to true and run playbook again.
 
 License
 -------
 
-BSD
-
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+MIT
