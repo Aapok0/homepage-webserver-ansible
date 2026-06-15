@@ -1,0 +1,9 @@
+{% if nginx_security_headers_enabled | default(true) %}
+    add_header X-Frame-Options "{{ nginx_security_headers_x_frame_options | default('DENY') }}" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "{{ nginx_security_headers_referrer_policy | default('strict-origin-when-cross-origin') }}" always;
+    add_header Content-Security-Policy "{{ nginx_security_headers_csp }}" always;
+{% if nginx_certs %}
+    add_header Strict-Transport-Security "{{ nginx_security_headers_hsts }}" always;
+{% endif %}
+{% endif %}

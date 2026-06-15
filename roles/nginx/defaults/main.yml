@@ -13,7 +13,7 @@ nginx_sendfile: 'on'
 nginx_sendfile_max_chunk: 2m
 nginx_tcp_nopush: 'on'
 nginx_types_hash_max_size: 1024
-nginx_server_tokens: 'on'
+nginx_server_tokens: 'off'
 nginx_server_name_in_redirect: 'on'
 nginx_default_type: application/octet-stream
 
@@ -34,3 +34,10 @@ nginx_gzip_types: 'text/html text/plain text/css application/json application/ja
 
 # Vhost
 nginx_listen_ipv6: true
+
+# Security headers (ngx_http_headers_module — nginx.org/en/docs/http/ngx_http_headers_module.html)
+nginx_security_headers_enabled: true
+nginx_security_headers_hsts: 'max-age=31536000; includeSubDomains'
+nginx_security_headers_x_frame_options: 'DENY'
+nginx_security_headers_referrer_policy: 'strict-origin-when-cross-origin'
+nginx_security_headers_csp: "default-src 'self'; script-src 'self' https://ajax.googleapis.com; style-src 'self'; img-src 'self'; font-src 'self'; frame-ancestors 'none'"

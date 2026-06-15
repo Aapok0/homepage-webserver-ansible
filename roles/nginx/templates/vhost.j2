@@ -25,6 +25,8 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/{{ domain }}/privkey.pem; # managed by Certbot
 {% endif %}
 
+{% include 'security-headers.conf.j2' %}
+
 {% for app in nginx_apps %}
 {% if app.main %}
     location / {
@@ -37,6 +39,10 @@ server {
     location /{{ app.location }}/ {
         root /var/www/{{ nginx_domains | first | default('app') }};
         index index.html index.htm index.php;
+
+        location ~ ^/{{ app.location }}/(config|components|php)/ {
+            deny all;
+        }
 
 {% if app.php %}
         try_files $uri $uri/ /index.php?$query_string =404;
@@ -116,6 +122,10 @@ server {
     location /{{ app.location }}/ {
         root /var/www/{{ nginx_domains | first | default('app') }};
         index index.html index.htm index.php;
+
+        location ~ ^/{{ app.location }}/(config|components|php)/ {
+            deny all;
+        }
 
 {% if app.php %}
         try_files $uri $uri/ /index.php?$query_string =404;
