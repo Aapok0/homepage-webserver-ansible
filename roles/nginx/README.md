@@ -70,7 +70,7 @@ nginx_security_headers_enabled: true
 nginx_security_headers_hsts: 'max-age=31536000; includeSubDomains'
 nginx_security_headers_x_frame_options: 'DENY'
 nginx_security_headers_referrer_policy: 'strict-origin-when-cross-origin'
-nginx_security_headers_csp: "default-src 'self'; script-src 'self' https://ajax.googleapis.com; style-src 'self'; img-src 'self'; font-src 'self'; frame-ancestors 'none'"
+nginx_security_headers_csp: "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; frame-ancestors 'none'"
 nginx_apps:
   - name: example
     main: true # App that will be served when using root of the domain
