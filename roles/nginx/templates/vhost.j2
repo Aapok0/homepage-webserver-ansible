@@ -36,6 +36,16 @@ server {
 {% endfor %}
 
 {% for app in nginx_apps %}
+{% if app.php %}
+    location ~ ^/{{ app.location }}/index\.php$ {
+        return 301 $scheme://$host/{{ app.location }}/;
+    }
+
+    location ~ ^/{{ app.location }}/(.+)\.php$ {
+        return 301 $scheme://$host/{{ app.location }}/$1$is_args$args;
+    }
+
+{% endif %}
     location /{{ app.location }}/ {
         root /var/www/{{ nginx_domains | first | default('app') }};
         index index.html index.htm index.php;
@@ -45,7 +55,7 @@ server {
         }
 
 {% if app.php %}
-        try_files $uri $uri/ /index.php?$query_string =404;
+        try_files $uri $uri/ $uri.php?$query_string;
 
         location ~ \.php {
             include snippets/fastcgi-php.conf;
@@ -119,6 +129,16 @@ server {
 {% endfor %}
 
 {% for app in nginx_apps %}
+{% if app.php %}
+    location ~ ^/{{ app.location }}/index\.php$ {
+        return 301 $scheme://$host/{{ app.location }}/;
+    }
+
+    location ~ ^/{{ app.location }}/(.+)\.php$ {
+        return 301 $scheme://$host/{{ app.location }}/$1$is_args$args;
+    }
+
+{% endif %}
     location /{{ app.location }}/ {
         root /var/www/{{ nginx_domains | first | default('app') }};
         index index.html index.htm index.php;
@@ -128,7 +148,7 @@ server {
         }
 
 {% if app.php %}
-        try_files $uri $uri/ /index.php?$query_string =404;
+        try_files $uri $uri/ $uri.php?$query_string;
 
         location ~ \.php {
             include snippets/fastcgi-php.conf;
