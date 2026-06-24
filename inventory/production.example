@@ -1,0 +1,14 @@
+# Copy to homepage-webserver-ansible/inventory/production
+# Replace placeholder IP and username after terraform apply in azure-tf-architecture.
+#
+#   cd azure-tf-architecture && terraform output public_ip_info_out
+#
+# Example output format: ["webserver: 203.0.113.20"] — 203.0.113.x is RFC 5737 documentation only, not a real IP.
+#
+# ansible_user must match vms.*.admin_user in azure-tf-architecture/project.auto.tfvars
+
+[servers]
+203.0.113.20 ansible_user=your_admin_user
+
+[nginx]
+203.0.113.20 ansible_user=your_admin_user

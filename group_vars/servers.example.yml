@@ -1,0 +1,19 @@
+---
+# Copy to homepage-webserver-ansible/group_vars/servers.yml
+# firewall_allowed_ips must match NSG ssh/ping source_address_prefixes in
+# azure-tf-architecture/project.auto.tfvars
+#
+# 203.0.113.10 is an RFC 5737 documentation address — replace with your home/public IP.
+
+firewall_disable_ipv6: true
+firewall_allowed_ips:
+  - 203.0.113.10
+firewall_ufw_rules:
+  - port: 80
+    proto: tcp
+  - port: 443
+    proto: tcp
+
+server_init_extra_packages:
+  - htop
+  - tmux

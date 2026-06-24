@@ -1,0 +1,20 @@
+---
+# Copy to homepage-webserver-ansible/group_vars/nginx.yml before running nginx.yml
+
+nginx_certs: false # Set true after first successful nginx.yml run (see README Usage)
+
+nginx_domains:
+  - www.example.com
+  - example.com
+nginx_cert_email: you@example.com
+nginx_listen_ipv6: false
+
+nginx_apps:
+  - name: homepage-bulma
+    main: true
+    repo: https://github.com/Aapok0/homepage-bulma.git
+    location: v2 # Site path; use "" or "/" pattern via location name for root when going live at /
+    npm: true
+    sass: true
+    php: true
+    build_command: css-build

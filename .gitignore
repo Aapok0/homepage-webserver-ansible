@@ -1,6 +1,8 @@
-# Ignore inventory files to keep IPs secret
+# Ignore inventory files to keep IPs secret (committed *.example templates are allowed)
 inventory/*
+!inventory/*.example
 
-# Ignore host_vars and group_vars (might have sensitive information)
+# Ignore host_vars and group_vars (committed *.example.yml templates are allowed)
 host_vars/
-group_vars
+group_vars/*
+!group_vars/*.example.yml
