@@ -12,18 +12,41 @@ The way the roles have been written is a compromise between between the needs of
 
 ## Configuration
 
-For the servers you want to run Ansibles to you need to create inventory file (or multiple) under inventory directory like for example `inventory/production` with the following group names (ansible_user optional, but useful):
+Committed templates (copy and edit locally; real files stay gitignored):
+
+| Template | Copy to |
+|----------|---------|
+| `inventory/production.example` | `inventory/production` |
+| `group_vars/servers.example.yml` | `group_vars/servers.yml` |
+| `group_vars/nginx.example.yml` | `group_vars/nginx.yml` |
+
+### Terraform handoff
+
+After `terraform apply` in the **azure-tf-architecture** repository:
+
+> **Placeholders:** IP addresses like `203.0.113.x` in this README and in `*.example` files are [RFC 5737 documentation addresses](https://datatrfc.ietf.org/doc/html/rfc5737) — not real public IPs. Replace them with your VM IP and home IP after deploy.
+
+1. **VM IP** — in **azure-tf-architecture**, run `terraform output public_ip_info_out` (e.g. `webserver: 203.0.113.20` in docs only → use your actual IP in **homepage-webserver-ansible** `inventory/production`).
+2. **ansible_user** — match `vms.webserver.admin_user` in **azure-tf-architecture** `project.auto.tfvars` (use a non-obvious username in your real tfvars; examples use `your_admin_user`).
+3. **SSH allowlist** — `firewall_allowed_ips` in **homepage-webserver-ansible** `group_vars/servers.yml` must match NSG `source_address_prefixes` for `ssh` and `ping` in **azure-tf-architecture** `project.auto.tfvars`.
+4. **DNS** — **azure-tf-architecture** creates the Azure DNS zone and A records; point your registrar nameservers at Azure if not already done.
+5. **Certificates** — `nginx_cert_email` in **homepage-webserver-ansible** `group_vars/nginx.yml`; domains must resolve to the VM before `nginx_certs: true`.
+
+**azure-tf-architecture** may also append the VM IP to **homepage-webserver-ansible** `inventory/production` via a VM provisioner if paths match your machine layout — verify the file after apply.
+
+### Inventory
+
+For the servers you want to run Ansible against, create an inventory file under `inventory/` (for example `inventory/production`) with these groups. Use your real VM IP — not the placeholder below:
 
 ```ini
 [servers]
-123.123.123.123 ansible_user=user_here
-111.111.111.111 ansible_user=user_here
+203.0.113.20 ansible_user=your_admin_user
 
 [nginx]
-123.123.123.123 ansible_user=user_here
+203.0.113.20 ansible_user=your_admin_user
 ```
 
-Variables for the roles can be configured in files in either host_vars or group_vars directories. The host_vars files need to be named the same as the hosts and they define variables for that host only. The group_vars are named after the inventory groups and I use them in my project. The roles have the following variables.
+Variables for the roles go in `group_vars/` named after inventory groups (`servers`, `nginx`). See the `*.example.yml` files for a working homepage setup. The roles also support the following variables.
 
 server_init:
 
@@ -134,19 +157,25 @@ nginx_apps:
 
 ### Required collections
 
-- ansible.posix
-- community.general
+Install pinned collections from `requirements.yml`:
 
 ```bash
-ansible-galaxy collection install <collection>
+ansible-galaxy collection install -r requirements.yml
 ```
+
+Collections: `ansible.posix`, `community.general`
 
 ### Steps
 
 ```bash
 # Requires Ansible version 2.15.3 or above and collections above
 
-# Clone repository, add inventory and configure to your liking
+# Clone repository, install collections, copy *.example files (see Configuration)
+
+cp inventory/production.example inventory/production
+cp group_vars/servers.example.yml group_vars/servers.yml
+cp group_vars/nginx.example.yml group_vars/nginx.yml
+# Edit inventory IP, firewall_allowed_ips, nginx_cert_email
 
 # Run server_init.yml playbook (first with check and then without, if evertyhing looks fine)
 # Playbook will ask for admin user name and password (need to have admin other than root)
