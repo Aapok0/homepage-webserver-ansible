@@ -35,6 +35,11 @@ nginx_gzip_types: 'text/html text/plain text/css application/json application/ja
 # Vhost
 nginx_listen_ipv6: true
 
+# PHP-FPM (Ubuntu 24.04 LTS ships PHP 8.3)
+nginx_php_version: '8.3'
+nginx_php_fpm_package: 'php8.3-fpm'
+nginx_php_fpm_socket: '/run/php/php8.3-fpm.sock'
+
 # Security headers (ngx_http_headers_module — nginx.org/en/docs/http/ngx_http_headers_module.html)
 nginx_security_headers_enabled: true
 nginx_security_headers_hsts: 'max-age=31536000; includeSubDomains'

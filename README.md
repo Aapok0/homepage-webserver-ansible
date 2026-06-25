@@ -1,6 +1,6 @@
 # Ansibles to setup an Nginx webserver for my homepage
 
-The main purpose of this Ansible project is to deploy and manage an Nginx webserver for my homepage. The VM that the webserver is deployed to is hosted in Azure and the resources to it are being managed with Terraforms.
+The VM that the webserver is deployed to is hosted in Azure (**azure-tf-architecture**) on **Ubuntu 24.04 LTS** with **PHP 8.3** (php-fpm). Pin the image version in Terraform; PHP package names are set in the nginx role defaults (`nginx_php_fpm_package`).
 
 The way the roles have been written is a compromise between between the needs of my project and wanting to write reusable Ansible code. The roles could have more features and configurability, but any more would be unnecessary for my needs. The way certbot works with the nginx role as a whole could be much improved and there's some extra steps that required to run it, which are explained in [Usage](#Usage).
 
@@ -27,12 +27,22 @@ After `terraform apply` in the **azure-tf-architecture** repository:
 > **Placeholders:** IP addresses like `203.0.113.x` in this README and in `*.example` files are [RFC 5737 documentation addresses](https://datatrfc.ietf.org/doc/html/rfc5737) — not real public IPs. Replace them with your VM IP and home IP after deploy.
 
 1. **VM IP** — in **azure-tf-architecture**, run `terraform output public_ip_info_out` (e.g. `webserver: 203.0.113.20` in docs only → use your actual IP in **homepage-webserver-ansible** `inventory/production`).
-2. **ansible_user** — match `vms.webserver.admin_user` in **azure-tf-architecture** `project.auto.tfvars` (use a non-obvious username in your real tfvars; examples use `your_admin_user`).
+2. **ansible_user** — generated per VM; run `terraform output admin_user_out` or use `./scripts/sync-ansible-inventory.sh` after apply (reads **azure-tf-architecture** `ansible_hosts_out`).
 3. **SSH allowlist** — `firewall_allowed_ips` in **homepage-webserver-ansible** `group_vars/servers.yml` must match NSG `source_address_prefixes` for `ssh` and `ping` in **azure-tf-architecture** `project.auto.tfvars`.
 4. **DNS** — **azure-tf-architecture** creates the Azure DNS zone and A records; point your registrar nameservers at Azure if not already done.
 5. **Certificates** — `nginx_cert_email` in **homepage-webserver-ansible** `group_vars/nginx.yml`; domains must resolve to the VM before `nginx_certs: true`.
 
-**azure-tf-architecture** may also append the VM IP to **homepage-webserver-ansible** `inventory/production` via a VM provisioner if paths match your machine layout — verify the file after apply.
+After `terraform apply`, sync inventory from the **azure-tf-architecture** repository (rewrites managed inventory files; removes hosts no longer in state):
+
+```bash
+cd azure-tf-architecture
+./scripts/sync-ansible-inventory.sh
+./scripts/sync-ssh-config.sh   # optional: replaces terraform-managed ~/.ssh/config blocks only
+```
+
+`sync-ansible-inventory.sh` regenerates `inventory/development`, `inventory/test`, and `inventory/production` every run. `sync-ssh-config.sh` strips blocks between `# BEGIN terraform-managed:` / `# END terraform-managed:` markers and rewrites them from state; other SSH config entries are left alone.
+
+Set `ANSIBLE_REPO` if **homepage-webserver-ansible** is not a sibling directory.
 
 ### Inventory
 

@@ -29,10 +29,16 @@
     - nginx
     - git
     - php
-    - php8.1-fpm
+    - '{{ nginx_php_fpm_package }}'
     - nodejs
     - certbot
     - python3-certbot-nginx
+
+- name: Enable and start PHP-FPM
+  ansible.builtin.service:
+    name: '{{ nginx_php_fpm_package }}'
+    state: started
+    enabled: true
 
 - name: Change php directory ownership to nginx
   ansible.builtin.file:
@@ -42,7 +48,7 @@
 
 - name: Make sure php socket has right ownership
   ansible.builtin.file:
-    path: /run/php/php8.1-fpm.sock
+    path: '{{ nginx_php_fpm_socket }}'
     owner: nginx
     group: nginx
 

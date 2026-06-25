@@ -13,6 +13,8 @@ A role that installs nginx webserver with configurations and adds apps to be hos
 Requirements
 ------------
 
+Target OS: **Ubuntu 24.04 LTS** (from **azure-tf-architecture** VM image). PHP **8.3** via `php8.3-fpm` (see `nginx_php_fpm_package` in defaults).
+
 Following collections are required:
 - ansible.posix
 - community.general
