@@ -1,0 +1,57 @@
+---
+- name: Add Tailscale apt signing key
+  ansible.builtin.get_url:
+    url: 'https://pkgs.tailscale.com/stable/ubuntu/{{ tailscale_ubuntu_codename }}.noarmor.gpg'
+    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    mode: '0644'
+
+- name: Add Tailscale apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/tailscale.list
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu {{ tailscale_ubuntu_codename }} main
+
+# Installing and joining need the repo/package/binary that the tasks above only
+# stage for real (not in --check), so skip the whole sequence in check mode.
+- name: Install and join Tailscale
+  when: not ansible_check_mode
+  block:
+    - name: Install Tailscale
+      ansible.builtin.apt:
+        name: tailscale
+        update_cache: true
+
+    - name: Enable and start tailscaled
+      ansible.builtin.service:
+        name: tailscaled
+        state: started
+        enabled: true
+
+    - name: Check Tailscale connection status
+      ansible.builtin.command: tailscale status
+      register: tailscale_status
+      changed_when: false
+      failed_when: false
+
+    - name: Fail when not connected and no auth key was provided
+      ansible.builtin.fail:
+        msg: >-
+          Tailscale is not connected and TAILSCALE_AUTHKEY is empty. Generate an auth
+          key in the Tailscale admin console (store it in Key Vault), export it, then
+          re-run — or run 'sudo tailscale up' on the host manually.
+      when:
+        - tailscale_status.rc != 0
+        - tailscale_authkey | length == 0
+
+    # argv form avoids shell quoting of the key; no_log keeps it out of output.
+    - name: Join the tailnet
+      ansible.builtin.command:
+        argv: "{{ ['tailscale', 'up', '--authkey', tailscale_authkey] + (['--advertise-tags=' ~ (tailscale_tags | join(','))] if tailscale_tags | length > 0 else []) + (['--hostname', tailscale_hostname] if tailscale_hostname | length > 0 else []) + tailscale_up_extra_args }}"
+      when:
+        - tailscale_status.rc != 0
+        - tailscale_authkey | length > 0
+      no_log: true
+      changed_when: true

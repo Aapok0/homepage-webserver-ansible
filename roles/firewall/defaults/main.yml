@@ -2,3 +2,7 @@
 firewall_disable_ipv6: false
 firewall_allowed_ips:
   - any
+# SSH is exposed only over the Tailscale interface by default (survives a
+# changing public IP). Set false to fall back to firewall_allowed_ips.
+firewall_ssh_over_tailscale_only: true
+firewall_ssh_interface: tailscale0

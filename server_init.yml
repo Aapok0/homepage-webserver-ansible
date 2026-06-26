@@ -2,18 +2,17 @@
 - name: Server init
   hosts: servers
 
-  vars_prompt:
-    - name: server_init_admin
-      prompt: Choose admin username
-      private: false
-
-    - name: server_init_admin_pass
-      prompt: Enter password for the admin user
-      unsafe: true
-      private: true
-
   roles:
     - server_init
+
+# Tailscale must be up before the firewall restricts SSH to the tailscale0
+# interface, otherwise you would lock yourself out.
+- name: Tailscale
+  hosts: servers
+  become: true
+
+  roles:
+    - tailscale
 
 - name: Firewall
   hosts: servers

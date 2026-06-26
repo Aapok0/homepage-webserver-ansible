@@ -62,7 +62,8 @@ nginx_gzip_http_version: 1.1
 nginx_gzip_types: 'text/html text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript'
 
 # Vhost
-nginx_certs: true # Should be set false for first run to generate valid nginx config
+nginx_manage_certs: true # TLS enabled automatically once a cert exists; false skips certbot
+nginx_acme_webroot: /var/www/acme # Webroot for the ACME http-01 challenge
 nginx_domains:
   - www.example.com # First in the list will be used as main domain
   - example.com # The rest of the domains will be redirected to main domain
@@ -77,6 +78,7 @@ nginx_apps:
   - name: example
     main: true # App that will be served when using root of the domain
     repo: https://github.com/Aapok0/homepage.git
+    version: main # Pin a tag/branch/commit; defaults to main
     location: example # Path of app -> www.example.com/example/
     npm: true # The tasks use pnpm
     sass: true
@@ -85,6 +87,7 @@ nginx_apps:
   - name: example2
     main: false
     repo: https://github.com/Aapok0/homepage-bulma.git
+    version: v2.0.0
     location: example2 # Path of app -> www.example.com/example2/
     npm: false
     sass: false
@@ -104,9 +107,9 @@ Example Playbook
     - nginx
 ```
 
-- If you are adding certificates, first set nginx_certs to false.
-- Run nginx.yml playbook (first with check and then without, if evertyhing looks fine).
-- If you are adding certificates, now set nginx_certs to true and run playbook again.
+- Certificates are issued via the ACME webroot challenge and TLS is enabled automatically once a cert exists — a single `nginx.yml` run bootstraps a fresh host.
+- Ensure `nginx_domains` resolve to the host and ports 80/443 are open before the first run.
+- Renewal runs daily via cron with `--deploy-hook 'systemctl reload nginx'`.
 
 License
 -------

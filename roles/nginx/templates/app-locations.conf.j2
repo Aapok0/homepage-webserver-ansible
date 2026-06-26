@@ -1,0 +1,40 @@
+{% for app in nginx_apps %}
+{% if app.main | default(false) %}
+    location / {
+        return 301 $scheme://$host/{{ app.location }}/;
+    }
+{% endif %}
+{% endfor %}
+
+{% for app in nginx_apps %}
+{% if app.php | default(false) %}
+    location ~ ^/{{ app.location }}/index\.php$ {
+        return 301 $scheme://$host/{{ app.location }}/;
+    }
+
+    location ~ ^/{{ app.location }}/(.+)\.php$ {
+        return 301 $scheme://$host/{{ app.location }}/$1$is_args$args;
+    }
+
+{% endif %}
+    location /{{ app.location }}/ {
+        root /var/www/{{ nginx_domains | first | default('app') }};
+        index index.html index.htm index.php;
+
+        location ~ ^/{{ app.location }}/(config|components|php)/ {
+            deny all;
+        }
+
+{% if app.php | default(false) %}
+        try_files $uri $uri/ $uri.php?$query_string;
+
+        location ~ \.php {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:{{ nginx_php_fpm_socket }};
+        }
+{% else %}
+        try_files $uri $uri/ =404;
+{% endif %}
+    }
+
+{% endfor %}

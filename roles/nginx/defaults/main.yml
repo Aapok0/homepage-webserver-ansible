@@ -35,6 +35,11 @@ nginx_gzip_types: 'text/html text/plain text/css application/json application/ja
 # Vhost
 nginx_listen_ipv6: true
 
+# TLS / certbot (Let's Encrypt via webroot; TLS is enabled automatically once a
+# certificate exists, so no manual two-pass toggle is needed)
+nginx_manage_certs: true
+nginx_acme_webroot: /var/www/acme
+
 # PHP-FPM (Ubuntu 24.04 LTS ships PHP 8.3)
 nginx_php_version: '8.3'
 nginx_php_fpm_package: 'php8.3-fpm'

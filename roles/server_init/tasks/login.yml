@@ -1,4 +1,39 @@
 ---
+# Username comes from a variable (group_vars/extra-vars). Prompt only as a
+# fallback when it isn't set anywhere.
+- name: Prompt for admin username (only if not provided)
+  ansible.builtin.pause:
+    prompt: Choose admin username
+  register: admin_user_prompt
+  when: server_init_admin is not defined or (server_init_admin | string | length == 0)
+
+- name: Resolve admin username
+  ansible.builtin.set_fact:
+    server_init_admin: "{{ admin_user_prompt.user_input | trim if (admin_user_prompt.user_input is defined) else server_init_admin }}"
+
+# Only create the user when we are not already connected as it.
+- name: Determine whether the admin user must be created
+  ansible.builtin.set_fact:
+    server_init_create_admin: "{{ ansible_facts['user_id'] != server_init_admin }}"
+
+# A password is only needed to create a new user. Skip the prompt entirely on
+# re-runs (user exists) or when supplied via a variable/Vault.
+- name: Prompt for admin password (only when creating the user and none supplied)
+  ansible.builtin.pause:
+    prompt: "Enter password for new admin user {{ server_init_admin }}"
+    echo: false
+  register: admin_pass_prompt
+  no_log: true
+  when:
+    - server_init_create_admin
+    - server_init_admin_pass is not defined or (server_init_admin_pass | string | length == 0)
+
+- name: Resolve admin password
+  ansible.builtin.set_fact:
+    server_init_admin_pass: "{{ admin_pass_prompt.user_input if (admin_pass_prompt.user_input is defined) else (server_init_admin_pass | default('')) }}"
+  no_log: true
+  when: server_init_create_admin
+
 - name: Add admin user {{ server_init_admin }}
   ansible.builtin.user:
     name: '{{ server_init_admin }}'
@@ -7,21 +42,21 @@
     shell: /bin/bash
     password: "{{ server_init_admin_pass | password_hash('sha512') }}"
   become: true
-  when: ansible_user_id != lookup('ansible.builtin.vars', 'server_init_admin')
+  when: server_init_create_admin
 
 - name: Add SSH key for admin user {{ server_init_admin }}
   ansible.posix.authorized_key:
     user: '{{ server_init_admin }}'
     key: '{{ server_init_admin_pubkey }}'
   become: true
-  when: ansible_user_id != lookup('ansible.builtin.vars', 'server_init_admin')
+  when: server_init_create_admin
 
 - name: Disable root password
   ansible.builtin.user:
     name: root
     password: !
   become: true
-  when: ansible_user_id != 'root'
+  when: ansible_facts['user_id'] != 'root'
 
 - name: Disable password login
   ansible.builtin.lineinfile:
@@ -30,7 +65,7 @@
     line: PasswordAuthentication no
   become: true
   notify: Restart SSH
-  when: ansible_user_id != 'root'
+  when: ansible_facts['user_id'] != 'root'
 
 - name: Disable root login
   ansible.builtin.lineinfile:
@@ -39,4 +74,22 @@
     line: PermitRootLogin no
   become: true
   notify: Restart SSH
-  when: ansible_user_id != 'root'
+  when: ansible_facts['user_id'] != 'root'
+
+# Cloud images ship /etc/ssh/sshd_config.d/50-cloud-init.conf (often
+# PasswordAuthentication yes), Include'd before the main file, so it wins.
+# A 00- drop-in sorts first and takes precedence over both.
+- name: Harden SSH via drop-in (override cloud-init defaults)
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/00-hardening.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      # Managed by Ansible (server_init) — overrides cloud-init/base-image defaults.
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+  become: true
+  notify: Restart SSH
+  when: ansible_facts['user_id'] != 'root'

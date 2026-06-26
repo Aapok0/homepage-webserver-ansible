@@ -20,12 +20,23 @@
   when: not firewall_disable_ipv6
   notify: Reload UFW
 
-- name: Allow SSH from specified addresses
+- name: Allow SSH only over the Tailscale interface
   community.general.ufw:
     rule: allow
-    to_port: 22
+    direction: in
+    interface: '{{ firewall_ssh_interface }}'
+    to_port: '22'
+    proto: tcp
+  when: firewall_ssh_over_tailscale_only
+  notify: Reload UFW
+
+- name: Allow SSH from specified addresses (fallback when not Tailscale-only)
+  community.general.ufw:
+    rule: allow
+    to_port: '22'
     from_ip: '{{ item }}'
   loop: '{{ firewall_allowed_ips }}'
+  when: not firewall_ssh_over_tailscale_only
   notify: Reload UFW
 
 - name: Open ports

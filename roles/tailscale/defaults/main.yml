@@ -1,0 +1,25 @@
+---
+# Where the auth/OAuth key comes from. If tailscale_kv_name is set, the key is
+# pulled from Key Vault with the az CLI on the control node (must be `az login`'d).
+# Otherwise it falls back to the TAILSCALE_AUTHKEY environment variable.
+tailscale_kv_name: ''
+tailscale_secret_name: homepage-tailscale-oauthkey
+
+tailscale_authkey: >-
+  {{ lookup('pipe', 'az keyvault secret show --vault-name ' ~ tailscale_kv_name ~ ' --name ' ~ tailscale_secret_name ~ ' --query value -o tsv')
+     if (tailscale_kv_name | length > 0)
+     else (lookup('env', 'TAILSCALE_AUTHKEY') | default('', true)) }}
+
+# Tags to advertise. REQUIRED when the key is an OAuth client secret
+# (e.g. ['tag:server']); the tag must exist in the tailnet ACL and be granted
+# to the OAuth client.
+tailscale_tags: []
+
+# Hostname shown in the tailnet / MagicDNS. Empty = use the machine hostname.
+tailscale_hostname: ''
+
+# Extra flags (list) passed to `tailscale up`, e.g. ['--ssh'] or ['--accept-routes'].
+tailscale_up_extra_args: []
+
+# Ubuntu codename for the Tailscale apt repo (24.04 LTS = noble).
+tailscale_ubuntu_codename: noble

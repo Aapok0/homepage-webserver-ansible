@@ -1,26 +1,50 @@
 ---
-- name: Check if file exists
-  ansible.builtin.stat:
-    path: '/etc/letsencrypt/live/{{ nginx_domains | first }}'
-  register: cert_exists
+- name: Ensure ACME webroot exists
+  ansible.builtin.file:
+    path: '{{ nginx_acme_webroot }}'
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: '0755'
+  when: nginx_domains is defined and nginx_manage_certs
 
-- name: Generate SSL/TLS certificate for domain/s
+# Apply the HTTP vhost (rendered earlier) so nginx serves the ACME challenge
+# before certbot runs. Handlers normally fire at end of play.
+- name: Apply pending nginx changes so the ACME challenge is reachable
+  ansible.builtin.meta: flush_handlers
+
+- name: Obtain certificate via webroot
   ansible.builtin.command:
-    cmd: 'certbot --nginx -d {{ nginx_domains | join(",") }} -m {{ nginx_cert_email }} --non-interactive --agree-tos'
-    creates: '/etc/letsencrypt/live/{{ nginx_domains | first }}'
-  notify: Restart Nginx
-  when: nginx_domains is defined and nginx_certs
+    cmd: >-
+      certbot certonly --webroot -w {{ nginx_acme_webroot }}
+      -d {{ nginx_domains | join(' -d ') }}
+      -m {{ nginx_cert_email }} --non-interactive --agree-tos
+    creates: '/etc/letsencrypt/live/{{ nginx_domains | first }}/fullchain.pem'
+  register: certbot_issue
+  when: nginx_domains is defined and nginx_manage_certs
 
-- name: Automatically renew certificate for domain/s with a cron job
+- name: Enable TLS now that a certificate is present
+  ansible.builtin.set_fact:
+    tls_enabled: true
+  when: certbot_issue.changed | default(false)
+
+# Only needed on the run that just issued the cert: re-render the vhost with the
+# 443 server blocks now that the certificate files exist.
+- name: Re-render vhost with TLS enabled
+  ansible.builtin.template:
+    src: templates/vhost.j2
+    dest: /etc/nginx/sites-available/{{ nginx_domains | first | default('app') }}
+    force: true
+    owner: nginx
+    group: nginx
+    mode: '0644'
+  notify: Reload Nginx
+  when: certbot_issue.changed | default(false)
+
+- name: Schedule certificate renewal with nginx reload hook
   ansible.builtin.cron:
     name: Renew certificates
-    minute: 0
-    hour: 12
-    job: /usr/bin/certbot renew -q
-  when: nginx_domains is defined and nginx_certs
-
-- name: Install SSL/TLS certificate for domain/s
-  ansible.builtin.command:
-    cmd: 'certbot install --cert-name {{ nginx_domains | first }}'
-  when: cert_exists.stat.exists
-  changed_when: true
+    minute: '0'
+    hour: '12'
+    job: "/usr/bin/certbot renew -q --deploy-hook 'systemctl reload nginx'"
+  when: nginx_domains is defined and nginx_manage_certs

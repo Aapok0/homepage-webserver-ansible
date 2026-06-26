@@ -1,13 +1,28 @@
 ---
-# Copy to homepage-webserver-ansible/group_vars/servers.yml
-# firewall_allowed_ips must match NSG ssh/ping source_address_prefixes in
-# azure-tf-architecture/project.auto.tfvars
+# Copy to homepage-webserver-ansible/group_vars/servers/main.yml
 #
-# 203.0.113.10 is an RFC 5737 documentation address — replace with your home/public IP.
+# firewall_allowed_ips is NOT set here. It is the single source of truth in
+# azure-tf-architecture (var.admin_allowed_ips) and is written to
+# group_vars/servers/firewall_allowed_ips.yml by:
+#   azure-tf-architecture/scripts/sync-firewall-allowlist.sh
+# Run that after terraform apply so NSG and UFW use the same allowlist.
+
+# Admin user the role manages. Set it here to skip the username prompt.
+# server_init_admin_pass is only needed when CREATING a new user; provide it via
+# Ansible Vault for unattended runs, otherwise the role prompts when creating.
+server_init_admin: myadmin
+
 
 firewall_disable_ipv6: true
-firewall_allowed_ips:
-  - 203.0.113.10
+
+# Tailscale: pull the OAuth key from Key Vault via the az CLI and advertise the
+# tag (required for OAuth-backed nodes). tailscale_secret_name defaults to
+# homepage-tailscale-oauthkey.
+tailscale_kv_name: sdc-prd-project-kv
+tailscale_tags:
+  - tag:vm
+
+# Ports opened to the internet (the firewall role runs on the servers group).
 firewall_ufw_rules:
   - port: 80
     proto: tcp

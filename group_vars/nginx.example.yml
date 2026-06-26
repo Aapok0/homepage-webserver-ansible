@@ -1,7 +1,9 @@
 ---
 # Copy to homepage-webserver-ansible/group_vars/nginx.yml before running nginx.yml
 
-nginx_certs: false # Set true after first successful nginx.yml run (see README Usage)
+# TLS is enabled automatically once a certificate exists (single playbook run,
+# webroot challenge). Set false to skip certbot entirely (e.g. local/dev).
+nginx_manage_certs: true
 
 nginx_domains:
   - www.example.com
@@ -13,6 +15,7 @@ nginx_apps:
   - name: homepage-bulma
     main: true
     repo: https://github.com/Aapok0/homepage-bulma.git
+    version: main # Pin a tag (e.g. v2.0.0) or commit for reproducible deploys
     location: v2 # Site path; use "" or "/" pattern via location name for root when going live at /
     npm: true
     sass: true

@@ -5,6 +5,8 @@
     state: directory
     mode: '0755'
   loop: '{{ nginx_apps }}'
+  loop_control:
+    label: '{{ item.name }}'
 
 - name: Make sure app nginx directories are present
   ansible.builtin.file:
@@ -14,51 +16,67 @@
     group: nginx
     mode: '0755'
   loop: '{{ nginx_apps }}'
+  loop_control:
+    label: '{{ item.name }}'
 
-- name: Clone app with git
+- name: Clone app at pinned ref
   ansible.builtin.git:
     repo: '{{ item.repo }}'
     dest: /opt/{{ item.name }}
+    version: "{{ item.version | default('main') }}"
   register: repository
   loop: '{{ nginx_apps }}'
+  loop_control:
+    label: "{{ item.name }}@{{ item.version | default('main') }}"
 
+# Downstream tasks loop over the clone results so each app's change state is
+# tracked individually (item.item = the app, item.changed = that app changed).
 - name: Ensure app directories have 755 permissions
   ansible.builtin.command:
-    cmd: find /opt/{{ item.name }} -type d -exec chmod 0755 {} \;
-  loop: '{{ nginx_apps }}'
-  changed_when: repository is changed
+    cmd: find /opt/{{ item.item.name }} -type d -exec chmod 0755 {} \;
+  loop: '{{ repository.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  changed_when: item.changed
 
 - name: Ensure app files have 644 permissions
   ansible.builtin.command:
-    cmd: find /opt/{{ item.name }} -type f -exec chmod 0644 {} \;
-  loop: '{{ nginx_apps }}'
-  changed_when: repository is changed
+    cmd: find /opt/{{ item.item.name }} -type f -exec chmod 0644 {} \;
+  loop: '{{ repository.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  changed_when: item.changed
 
 - name: Install app dependencies
   ansible.builtin.command:
     cmd: pnpm install
-    chdir: /opt/{{ item.name }}
-  loop: '{{ nginx_apps }}'
-  when: item.npm
-  changed_when: repository is changed
+    chdir: /opt/{{ item.item.name }}
+  loop: '{{ repository.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  when: item.item.npm | default(false) and item.changed
+  changed_when: item.changed
 
 - name: Build app
   ansible.builtin.command:
-    cmd: pnpm run {{ item.build_command }}
-    chdir: /opt/{{ item.name }}
-  loop: '{{ nginx_apps }}'
-  when: item.sass
-  changed_when: repository is changed
+    cmd: pnpm run {{ item.item.build_command }}
+    chdir: /opt/{{ item.item.name }}
+  loop: '{{ repository.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  when: item.item.sass | default(false) and item.changed
+  changed_when: item.changed
 
 - name: Copy app files to the app nginx directory
   ansible.posix.synchronize:
-    src: /opt/{{ item.name }}/
-    dest: /var/www/{{ nginx_domains | first | default('app') }}/{{ item.location }}/
+    src: /opt/{{ item.item.name }}/
+    dest: /var/www/{{ nginx_domains | first | default('app') }}/{{ item.item.location }}/
     perms: true
   delegate_to: '{{ inventory_hostname }}'
   notify: Restart Nginx
-  loop: '{{ nginx_apps }}'
-  changed_when: repository is changed
+  loop: '{{ repository.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
 
 - name: Change ownership of app nginx directories
   ansible.builtin.file:

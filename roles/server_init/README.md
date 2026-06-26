@@ -46,26 +46,17 @@ Example Playbook
 - name: Server init
   hosts: servers
 
-  vars_prompt:
-    - name: server_init_admin
-      prompt: Choose admin username
-      private: false
-
-    - name: server_init_admin_pass
-      prompt: Enter password for the admin user
-      unsafe: true
-      private: true
-
   roles:
     - server_init
 ```
 
-- Playbook will ask admin user name and a password for it
-  - If first playbook run is done with root user, playbook will create admin user, but will not disable root and password login yet
-    - Remember to give public ssh key with the variable `server_init_admin_pubkey`!
-    - Second playbook run with the newly made admin user will disable root and password login (give the same user when prompted)
-  - If you already have a user in the server with public ssh key, you can just give that user when prompted and the role will not create a new user and will disable root and password login
-    - No need to run the playbook a second time unless you make changes to variables
+Admin user/password are variables; the role prompts interactively only when needed:
+
+- `server_init_admin` — set it in `group_vars` (recommended). If unset anywhere, the role prompts for it once.
+- `server_init_admin_pass` — only used to **create** a new user. The role prompts for it **only** when a new user must be created and none was supplied. Provide it via a variable (ideally Ansible Vault) for unattended runs.
+- The user is created only when you are **not** already connected as `server_init_admin` (so re-runs, or connecting as an existing key-enabled user, skip creation and never prompt for a password).
+- Remember to provide the public SSH key via `server_init_admin_pubkey` when a user is created.
+- Root/password login are disabled whenever you connect as a non-root user (also via the `00-hardening.conf` sshd drop-in, so it survives cloud-image defaults).
 
 License
 -------
