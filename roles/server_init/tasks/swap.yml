@@ -31,8 +31,7 @@
     group: root
     mode: '0600'
   become: true
-  # In check mode the create step above is skipped, so /swapfile may not exist
-  # yet — skip rather than fail on a missing path during a preview run.
+  # /swapfile may not exist in --check (create step skipped).
   when: swapfile.stat.exists or not ansible_check_mode
 
 - name: Format swapfile

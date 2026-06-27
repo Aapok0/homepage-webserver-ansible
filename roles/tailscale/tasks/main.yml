@@ -14,8 +14,7 @@
     content: |
       deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu {{ tailscale_ubuntu_codename }} main
 
-# Installing and joining need the repo/package/binary that the tasks above only
-# stage for real (not in --check), so skip the whole sequence in check mode.
+# Needs the repo/package staged for real (not in --check).
 - name: Install and join Tailscale
   when: not ansible_check_mode
   block:

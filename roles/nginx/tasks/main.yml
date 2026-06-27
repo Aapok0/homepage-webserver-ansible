@@ -9,6 +9,17 @@
 - name: Install Nginx and other dependencies
   ansible.builtin.include_tasks: install.yml
 
+# /etc/nginx is absent until the package is really installed (not in --check);
+# gate the template/service tasks below on it so they still preview when present.
+- name: Detect whether Nginx is installed
+  ansible.builtin.stat:
+    path: /etc/nginx
+  register: nginx_etc
+
+- name: Set nginx_present fact
+  ansible.builtin.set_fact:
+    nginx_present: '{{ nginx_etc.stat.exists }}'
+
 - name: Deploy app to server
   ansible.builtin.include_tasks: app.yml
 
@@ -41,14 +52,17 @@
     owner: nginx
     group: nginx
     mode: '0644'
+  when: nginx_present
 
 - name: Validate Nginx configuration
   ansible.builtin.command:
     cmd: nginx -t
   changed_when: false
+  when: nginx_present
 
 - name: Ensure nginx service is running as configured
   ansible.builtin.service:
     name: nginx
     state: started
     enabled: true
+  when: nginx_present

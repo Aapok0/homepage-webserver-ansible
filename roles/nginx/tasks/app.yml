@@ -24,6 +24,7 @@
     repo: '{{ item.repo }}'
     dest: /opt/{{ item.name }}
     version: "{{ item.version | default('main') }}"
+    force: true
   register: repository
   loop: '{{ nginx_apps }}'
   loop_control:
@@ -47,14 +48,18 @@
     label: '{{ item.item.name }}'
   changed_when: item.changed
 
+# No real clone in --check, so /opt/<app> is absent; skip these in check mode.
+# --ignore-scripts: don't run dependency build scripts (not needed for a CSS build)
+# and don't fail on ERR_PNPM_IGNORED_BUILDS; keeps node_modules consistent so the
+# build below doesn't trigger a re-install.
 - name: Install app dependencies
   ansible.builtin.command:
-    cmd: pnpm install
+    cmd: pnpm install --ignore-scripts
     chdir: /opt/{{ item.item.name }}
   loop: '{{ repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
-  when: item.item.npm | default(false) and item.changed
+  when: item.item.npm | default(false) and item.changed and not ansible_check_mode
   changed_when: item.changed
 
 - name: Build app
@@ -64,7 +69,7 @@
   loop: '{{ repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
-  when: item.item.sass | default(false) and item.changed
+  when: item.item.sass | default(false) and item.changed and not ansible_check_mode
   changed_when: item.changed
 
 - name: Copy app files to the app nginx directory
@@ -77,6 +82,13 @@
   loop: '{{ repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
+  when: not ansible_check_mode
+
+# Check-capable: skip when the web root doesn't exist yet (fresh host in --check).
+- name: Stat app web root
+  ansible.builtin.stat:
+    path: /var/www/{{ nginx_domains | first | default('app') }}
+  register: nginx_web_root
 
 - name: Change ownership of app nginx directories
   ansible.builtin.file:
@@ -84,3 +96,4 @@
     owner: nginx
     group: nginx
     recurse: true
+  when: nginx_web_root.stat.exists

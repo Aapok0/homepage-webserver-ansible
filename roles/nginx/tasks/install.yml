@@ -21,6 +21,7 @@
   ansible.builtin.shell:
     cmd: set -o pipefail && curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
     creates: /etc/apt/preferences.d/nodejs
+    executable: /bin/bash
 
 - name: Install Nginx and required other packages
   ansible.builtin.apt:
@@ -34,46 +35,41 @@
     - certbot
     - python3-certbot-nginx
 
+# Need the packages really installed (not the case in --check).
 - name: Enable and start PHP-FPM
   ansible.builtin.service:
     name: '{{ nginx_php_fpm_package }}'
     state: started
     enabled: true
-
-- name: Change php directory ownership to nginx
-  ansible.builtin.file:
-    path: /run/php
-    owner: nginx
-    group: nginx
-
-- name: Make sure php socket has right ownership
-  ansible.builtin.file:
-    path: '{{ nginx_php_fpm_socket }}'
-    owner: nginx
-    group: nginx
+  when: not ansible_check_mode
 
 - name: Install pnpm
   ansible.builtin.command:
     cmd: npm install -g pnpm
     creates: /usr/bin/pnpm
+  when: not ansible_check_mode
 
-- name: Change ownership of default html root directory
+# Check-capable: skip paths that don't exist yet (e.g. fresh host in --check).
+- name: Stat paths that should be owned by nginx
+  ansible.builtin.stat:
+    path: '{{ item.path }}'
+  loop:
+    - { path: /run/php, recurse: false }
+    - { path: '{{ nginx_php_fpm_socket }}', recurse: false }
+    - { path: /var/www/html, recurse: true }
+    - { path: /etc/nginx/, recurse: true }
+    - { path: /var/log/nginx/, recurse: true }
+  loop_control:
+    label: '{{ item.path }}'
+  register: nginx_owned_paths
+
+- name: Set nginx ownership where the path exists
   ansible.builtin.file:
-    path: /var/www/html
+    path: '{{ item.item.path }}'
     owner: nginx
     group: nginx
-    recurse: true
-
-- name: Change ownership of Nginx configuration directory
-  ansible.builtin.file:
-    path: /etc/nginx/
-    owner: nginx
-    group: nginx
-    recurse: true
-
-- name: Change ownership of Nginx log directory
-  ansible.builtin.file:
-    path: /var/log/nginx/
-    owner: nginx
-    group: nginx
-    recurse: true
+    recurse: '{{ item.item.recurse }}'
+  loop: '{{ nginx_owned_paths.results }}'
+  loop_control:
+    label: '{{ item.item.path }}'
+  when: item.stat.exists

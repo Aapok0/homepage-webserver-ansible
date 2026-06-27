@@ -13,6 +13,7 @@
     group: nginx
     mode: '0644'
   notify: Reload Nginx
+  when: nginx_present | default(true)
 
 - name: Enable app
   ansible.builtin.file:
@@ -20,3 +21,4 @@
     dest: /etc/nginx/sites-enabled/{{ nginx_domains | first | default('app') }}
     state: link
   notify: Reload Nginx
+  when: nginx_present | default(true)

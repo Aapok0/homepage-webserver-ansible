@@ -39,7 +39,7 @@
     group: nginx
     mode: '0644'
   notify: Reload Nginx
-  when: certbot_issue.changed | default(false)
+  when: (certbot_issue.changed | default(false)) and (nginx_present | default(true))
 
 - name: Schedule certificate renewal with nginx reload hook
   ansible.builtin.cron:
