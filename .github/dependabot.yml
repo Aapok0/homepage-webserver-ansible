@@ -1,0 +1,7 @@
+version: 2
+updates:
+  # Dependabot has no ansible-galaxy ecosystem; only workflow actions are tracked.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
