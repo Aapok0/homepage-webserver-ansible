@@ -1,6 +1,6 @@
 # Start lenient; raise the profile (moderate -> safety -> shared -> production)
 # as the playbooks are cleaned up. See https://ansible.readthedocs.io/projects/lint/profiles/
-profile: basic
+profile: production
 
 exclude_paths:
-  - .github/
+  - .github/**

@@ -26,12 +26,12 @@
 - name: Detect existing TLS certificate
   ansible.builtin.stat:
     path: '/etc/letsencrypt/live/{{ nginx_domains | first }}/fullchain.pem'
-  register: tls_cert
+  register: nginx_tls_cert
   when: nginx_domains is defined
 
 - name: Set TLS state
   ansible.builtin.set_fact:
-    tls_enabled: "{{ (nginx_domains is defined) and (tls_cert.stat.exists | default(false)) }}"
+    nginx_tls_enabled: "{{ (nginx_domains is defined) and (nginx_tls_cert.stat.exists | default(false)) }}"
 
 - name: Add vhost file and enable app
   ansible.builtin.include_tasks: vhost.yml

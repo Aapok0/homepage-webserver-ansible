@@ -4,12 +4,12 @@
 - name: Prompt for admin username (only if not provided)
   ansible.builtin.pause:
     prompt: Choose admin username
-  register: admin_user_prompt
+  register: server_init_admin_user_prompt
   when: server_init_admin is not defined or (server_init_admin | string | length == 0)
 
 - name: Resolve admin username
   ansible.builtin.set_fact:
-    server_init_admin: "{{ admin_user_prompt.user_input | trim if (admin_user_prompt.user_input is defined) else server_init_admin }}"
+    server_init_admin: "{{ server_init_admin_user_prompt.user_input | trim if (server_init_admin_user_prompt.user_input is defined) else server_init_admin }}"
 
 # Only create the user when we are not already connected as it.
 - name: Determine whether the admin user must be created
@@ -22,7 +22,7 @@
   ansible.builtin.pause:
     prompt: "Enter password for new admin user {{ server_init_admin }}"
     echo: false
-  register: admin_pass_prompt
+  register: server_init_admin_pass_prompt
   no_log: true
   when:
     - server_init_create_admin
@@ -30,7 +30,10 @@
 
 - name: Resolve admin password
   ansible.builtin.set_fact:
-    server_init_admin_pass: "{{ admin_pass_prompt.user_input if (admin_pass_prompt.user_input is defined) else (server_init_admin_pass | default('')) }}"
+    server_init_admin_pass: >-
+      {{ server_init_admin_pass_prompt.user_input
+         if (server_init_admin_pass_prompt.user_input is defined)
+         else (server_init_admin_pass | default('')) }}
   no_log: true
   when: server_init_create_admin
 

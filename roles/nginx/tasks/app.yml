@@ -25,7 +25,7 @@
     dest: /opt/{{ item.name }}
     version: "{{ item.version | default('main') }}"
     force: true
-  register: repository
+  register: nginx_repository
   loop: '{{ nginx_apps }}'
   loop_control:
     label: "{{ item.name }}@{{ item.version | default('main') }}"
@@ -35,7 +35,7 @@
 - name: Ensure app directories have 755 permissions
   ansible.builtin.command:
     cmd: find /opt/{{ item.item.name }} -type d -exec chmod 0755 {} \;
-  loop: '{{ repository.results }}'
+  loop: '{{ nginx_repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
   changed_when: item.changed
@@ -43,7 +43,7 @@
 - name: Ensure app files have 644 permissions
   ansible.builtin.command:
     cmd: find /opt/{{ item.item.name }} -type f -exec chmod 0644 {} \;
-  loop: '{{ repository.results }}'
+  loop: '{{ nginx_repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
   changed_when: item.changed
@@ -56,7 +56,7 @@
   ansible.builtin.command:
     cmd: pnpm install --ignore-scripts
     chdir: /opt/{{ item.item.name }}
-  loop: '{{ repository.results }}'
+  loop: '{{ nginx_repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
   when: item.item.npm | default(false) and item.changed and not ansible_check_mode
@@ -66,7 +66,7 @@
   ansible.builtin.command:
     cmd: pnpm run {{ item.item.build_command }}
     chdir: /opt/{{ item.item.name }}
-  loop: '{{ repository.results }}'
+  loop: '{{ nginx_repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
   when: item.item.sass | default(false) and item.changed and not ansible_check_mode
@@ -79,7 +79,7 @@
     perms: true
   delegate_to: '{{ inventory_hostname }}'
   notify: Restart Nginx
-  loop: '{{ repository.results }}'
+  loop: '{{ nginx_repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
   when: not ansible_check_mode

@@ -11,12 +11,12 @@
 
 - name: Combine variable list and static list
   ansible.builtin.set_fact:
-    combined_packages: '{{ server_init_default_packages + server_init_extra_packages }}'
+    server_init_combined_packages: '{{ server_init_default_packages + server_init_extra_packages }}'
 
 - name: Make sure needed packages are installed
   ansible.builtin.apt:
     name: '{{ item }}'
-  with_items: '{{ combined_packages }}'
+  with_items: '{{ server_init_combined_packages }}'
   become: true
 
 - name: Enable unattended upgrades
@@ -25,7 +25,7 @@
     question: unattended-upgrades/enable_auto_updates
     vtype: boolean
     value: 'true'
-  register: unattended_enabled
+  register: server_init_unattended_enabled
   when: server_init_auto_upgrades
 
 - name: Disable unattended upgrades
@@ -34,19 +34,19 @@
     question: unattended-upgrades/enable_auto_updates
     vtype: boolean
     value: 'false'
-  register: unattended_disabled
+  register: server_init_unattended_disabled
   when: not server_init_auto_upgrades
 
 - name: Reconfigure unattended-upgrades
   ansible.builtin.command:
     cmd: dpkg-reconfigure -f noninteractive unattended-upgrades
   changed_when: true
-  when: unattended_enabled.changed or unattended_disabled.changed
+  when: server_init_unattended_enabled.changed or server_init_unattended_disabled.changed
 
 - name: Check, if a reboot is needed
   ansible.builtin.stat:
     path: /var/run/reboot-required
     get_checksum: false
-  register: reboot_required
-  changed_when: reboot_required.stat.exists
+  register: server_init_reboot_required
+  changed_when: server_init_reboot_required.stat.exists
   notify: Reboot host and wait for restart

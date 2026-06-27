@@ -1,4 +1,4 @@
-{# tls_enabled is set in tasks/main.yml from whether a Let's Encrypt cert exists. #}
+{# nginx_tls_enabled is set in tasks/main.yml from whether a Let's Encrypt cert exists. #}
 {% if nginx_domains is defined %}
 {% for domain in nginx_domains %}
 {% if loop.index == 1 %}
@@ -6,7 +6,7 @@
 # {{ domain }} - The main domain used in the app
 ##
 
-{% if tls_enabled %}
+{% if nginx_tls_enabled %}
 server {
     listen 443 ssl;
 {% if nginx_listen_ipv6 %}
@@ -40,7 +40,7 @@ server {
         default_type "text/plain";
     }
 
-{% if tls_enabled %}
+{% if nginx_tls_enabled %}
     location / {
         return 301 https://$host$request_uri;
     }
@@ -55,7 +55,7 @@ server {
 # {{ domain }} - Secondary domain that is redirected to the main domain
 ##
 
-{% if tls_enabled %}
+{% if nginx_tls_enabled %}
 server {
     listen 443 ssl;
 {% if nginx_listen_ipv6 %}
@@ -86,7 +86,7 @@ server {
     }
 
     location / {
-{% if tls_enabled %}
+{% if nginx_tls_enabled %}
         return 301 https://{{ nginx_domains | first }}$request_uri;
 {% else %}
         return 301 $scheme://{{ nginx_domains | first }}$request_uri;
