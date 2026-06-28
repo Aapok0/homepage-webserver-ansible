@@ -1,19 +1,9 @@
 {% for app in nginx_apps %}
 {% set loc = (app.location | default('')) | regex_replace('^/+', '') | regex_replace('/+$', '') %}
 {% if loc == '' %}
-{% if app.php | default(false) %}
-    location = /index.php {
-        return 301 $scheme://$host/;
-    }
-
-    location ~ ^/(.+)\.php$ {
-        return 301 $scheme://$host/$1$is_args$args;
-    }
-
-{% endif %}
     location / {
         root /var/www/{{ nginx_domains | first | default('app') }};
-        index index.html index.htm index.php;
+        index index.php index.html index.htm;
 
         location ~ ^/(config|components|php)/ {
             deny all;
@@ -22,7 +12,7 @@
 {% if app.php | default(false) %}
         try_files $uri $uri/ $uri.php?$query_string;
 
-        location ~ \.php {
+        location ~ \.php$ {
             include snippets/fastcgi-php.conf;
             fastcgi_pass unix:{{ nginx_php_fpm_socket }};
         }
@@ -32,23 +22,13 @@
     }
 {% else %}
 {% if app.main | default(false) %}
-    location / {
+    location = / {
         return 301 $scheme://$host/{{ loc }}/;
     }
-{% endif %}
-{% if app.php | default(false) %}
-    location ~ ^/{{ loc }}/index\.php$ {
-        return 301 $scheme://$host/{{ loc }}/;
-    }
-
-    location ~ ^/{{ loc }}/(.+)\.php$ {
-        return 301 $scheme://$host/{{ loc }}/$1$is_args$args;
-    }
-
 {% endif %}
     location /{{ loc }}/ {
         root /var/www/{{ nginx_domains | first | default('app') }};
-        index index.html index.htm index.php;
+        index index.php index.html index.htm;
 
         location ~ ^/{{ loc }}/(config|components|php)/ {
             deny all;
@@ -57,7 +37,7 @@
 {% if app.php | default(false) %}
         try_files $uri $uri/ $uri.php?$query_string;
 
-        location ~ \.php {
+        location ~ \.php$ {
             include snippets/fastcgi-php.conf;
             fastcgi_pass unix:{{ nginx_php_fpm_socket }};
         }

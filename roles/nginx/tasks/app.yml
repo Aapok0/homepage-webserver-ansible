@@ -32,9 +32,12 @@
 
 # Downstream tasks loop over the clone results so each app's change state is
 # tracked individually (item.item = the app, item.changed = that app changed).
+# Skip node_modules/.git: chmod 0644 would strip the execute bit off installed
+# binaries (e.g. node_modules/.bin/sass), breaking the build on re-deploys where
+# node_modules already exists before this runs.
 - name: Ensure app directories have 755 permissions
   ansible.builtin.command:
-    cmd: find /opt/{{ item.item.name }} -type d -exec chmod 0755 {} \;
+    cmd: find /opt/{{ item.item.name }} \( -path '*/node_modules' -o -path '*/.git' \) -prune -o -type d -exec chmod 0755 {} +
   loop: '{{ nginx_repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
@@ -42,16 +45,35 @@
 
 - name: Ensure app files have 644 permissions
   ansible.builtin.command:
-    cmd: find /opt/{{ item.item.name }} -type f -exec chmod 0644 {} \;
+    cmd: find /opt/{{ item.item.name }} \( -path '*/node_modules' -o -path '*/.git' \) -prune -o -type f -exec chmod 0644 {} +
   loop: '{{ nginx_repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
   changed_when: item.changed
 
-# No real clone in --check, so /opt/<app> is absent; skip these in check mode.
+# State checks let install/build self-heal: if a previous run failed after the
+# clone (which won't report changed again), missing node_modules / build output
+# still trigger a redo instead of silently shipping a half-built app.
+- name: Check whether node_modules is present
+  ansible.builtin.stat:
+    path: /opt/{{ item.item.name }}/node_modules
+  loop: '{{ nginx_repository.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  register: nginx_node_modules
+
+- name: Check whether built CSS is present
+  ansible.builtin.stat:
+    path: /opt/{{ item.item.name }}/css/main.css
+  loop: '{{ nginx_repository.results }}'
+  loop_control:
+    label: '{{ item.item.name }}'
+  register: nginx_build_output
+
 # --ignore-scripts: don't run dependency build scripts (not needed for a CSS build)
 # and don't fail on ERR_PNPM_IGNORED_BUILDS; keeps node_modules consistent so the
 # build below doesn't trigger a re-install.
+# Skipped in --check: no real clone there, so /opt/<app> is absent.
 - name: Install app dependencies
   ansible.builtin.command:
     cmd: pnpm install --ignore-scripts
@@ -59,8 +81,12 @@
   loop: '{{ nginx_repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
-  when: item.item.npm | default(false) and item.changed and not ansible_check_mode
-  changed_when: item.changed
+    index_var: idx
+  when:
+    - item.item.npm | default(false)
+    - not ansible_check_mode
+    - item.changed or not nginx_node_modules.results[idx].stat.exists
+  changed_when: true
 
 - name: Build app
   ansible.builtin.command:
@@ -69,14 +95,23 @@
   loop: '{{ nginx_repository.results }}'
   loop_control:
     label: '{{ item.item.name }}'
-  when: item.item.sass | default(false) and item.changed and not ansible_check_mode
-  changed_when: item.changed
+    index_var: idx
+  when:
+    - item.item.sass | default(false)
+    - not ansible_check_mode
+    - item.changed or not nginx_build_output.results[idx].stat.exists
+  changed_when: true
 
 - name: Copy app files to the app nginx directory
   ansible.posix.synchronize:
     src: /opt/{{ item.item.name }}/
     dest: /var/www/{{ nginx_domains | first | default('app') }}/{{ item.item.location }}/
     perms: true
+    rsync_opts: >-
+      {{ (['--delete'] if (item.item.location | default('') | regex_replace('^/+', '') | regex_replace('/+$', '')) != ''
+            or nginx_apps | length == 1
+          else [])
+         + ['--exclude=node_modules', '--exclude=.git'] }}
   delegate_to: '{{ inventory_hostname }}'
   notify: Restart Nginx
   loop: '{{ nginx_repository.results }}'

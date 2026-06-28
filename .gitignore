@@ -6,3 +6,7 @@ inventory/*
 host_vars/
 group_vars/*
 !group_vars/*.example.yml
+
+# Local Ansible / ansible-lint runtime artifacts
+.ansible/
+.anstmp/
