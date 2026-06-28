@@ -16,7 +16,7 @@ nginx_apps:
     main: true
     repo: https://github.com/Aapok0/homepage-bulma.git
     version: main # Pin a tag (e.g. v2.0.0) or commit for reproducible deploys
-    location: v2 # Site path; use "" or "/" pattern via location name for root when going live at /
+    location: "" # Empty = served from site root; set a subpath (e.g. v2) to nest it
     npm: true
     sass: true
     php: true
