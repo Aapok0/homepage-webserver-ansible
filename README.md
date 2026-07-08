@@ -41,12 +41,18 @@ Real config is SOPS-encrypted in git (`inventory/*.enc`, `group_vars/*.enc.yml`)
 
 ### Secrets (SOPS + age)
 
-Same age keypair and Bitwarden workflow as **azure-tf-architecture** (public key in `.sops.yaml`).
+Inventory and group_vars secrets are committed as SOPS-encrypted `*.enc` files. The public age key is in `.sops.yaml`. Store the matching private key outside the repo (password manager, secure backup, or similar) and install it on each machine that runs playbooks:
 
 ```bash
-./scripts/sops-decrypt.sh          # before playbooks on a new machine
-sops group_vars/servers/main.enc.yml   # edit in place
-./scripts/sops-encrypt.sh          # after editing plaintext, or after terraform sync
+mkdir -p ~/.config/sops/age
+# copy private key to ~/.config/sops/age/keys.txt
+chmod 600 ~/.config/sops/age/keys.txt
+```
+
+```bash
+./scripts/sops-decrypt.sh                # before playbooks on a new machine
+sops group_vars/servers/main.enc.yml     # edit encrypted file in place
+./scripts/sops-encrypt.sh                # after editing plaintext, or after terraform sync
 ```
 
 After `sync-ansible-inventory.sh` / `sync-firewall-allowlist.sh`, re-run `./scripts/sops-encrypt.sh` if you want the committed `.enc` inventory snapshot updated (inventory only; allowlist stays generated plaintext).
