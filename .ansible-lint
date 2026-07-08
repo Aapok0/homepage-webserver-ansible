@@ -4,3 +4,5 @@ profile: production
 
 exclude_paths:
   - .github/**
+  - "**/*.enc.yml"
+  - inventory/**/*.enc
