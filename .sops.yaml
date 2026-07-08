@@ -1,0 +1,5 @@
+creation_rules:
+  - path_regex: group_vars/.*\.enc\.ya?ml$
+    age: age1j653uj3tjln3fut0mg5vlxfz8q66390a70jd29qum04dzzkge5vs55udgn
+  - path_regex: inventory/.*\.enc$
+    age: age1j653uj3tjln3fut0mg5vlxfz8q66390a70jd29qum04dzzkge5vs55udgn
