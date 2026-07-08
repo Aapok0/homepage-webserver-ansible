@@ -1,0 +1,34 @@
+ansible_python_interpreter: ENC[AES256_GCM,data:wki5CADCvm8usAESwuAYUw==,iv:hgFr/DLYzw/zuiIRWHcKvWkcyCYic6TCl8nkciQ8Fq8=,tag:4S18Kgzfm5BO4xKhF+LMZA==,type:str]
+nginx_events_use: ENC[AES256_GCM,data:yq0qhAA=,iv:vlQ+5Y727mGqAN/+ExhvQoDZvxJ720zFW5jq3Aydl3M=,tag:NtFEgeD5WzpafQBsAuPGvw==,type:str]
+nginx_error_debug_level: ENC[AES256_GCM,data:ezFf8Q==,iv:4Xd+aIQOas+qwdIWAGTVYUtEemb9VzAOOm/+m+66LO4=,tag:KHJM7BKqMw2IfMFBSFPvPg==,type:str]
+nginx_domains:
+    - ENC[AES256_GCM,data:HeG5Fp+Rn76kYScUj3uqQzI=,iv:5V1osu1hw97S7r41EhlaYIJWtfZkInOU24LhdTlHd3Q=,tag:TGPGh1pTDlq57goE28iVPQ==,type:str]
+    - ENC[AES256_GCM,data:g7AZvIm5mvqv4LKvsg==,iv:MojGyM2dmdrQygQKYb6vKcb0k5Q61ipXLN8dTx9eT50=,tag:kzFeTXIQWzBu5UdZWmGy9g==,type:str]
+nginx_cert_email: ENC[AES256_GCM,data:+5+iIJQewahX49o8rQ==,iv:tslGebQ1jGuU/QaOX+9L3n0BtYUmTJSF+N3noijxMtU=,tag:hxsXVsI8CfYOqo1LeLB7Ig==,type:str]
+nginx_manage_certs: ENC[AES256_GCM,data:01E9VA==,iv:lQBQx/1tgmR9dRsqlS5LIEh1aj9+p42ztmhZvLV6OnY=,tag:Gz17rs8iDksOxaDnLcBcWA==,type:bool]
+nginx_listen_ipv6: ENC[AES256_GCM,data:2CTSps8=,iv:ZFyaLDvsBfu35xaB5cPzuquSMCyHu0LwvOD+svPHHo4=,tag:q271qQ2ZAhNMEw65LqflKw==,type:bool]
+nginx_apps:
+    - name: ENC[AES256_GCM,data:hBpw7DwFmmLY5QvwVn0=,iv:7u783gnLpGTdosh50uvueXivwHyZ4Viqe6esDZJAsPU=,tag:dlSL+rZHToo0hGpIYxr7fA==,type:str]
+      main: ENC[AES256_GCM,data:yaNCTQ==,iv:RghkropKbUYB4YgcSVPFeEdnkiYusZ0xCL0Yg6gVXog=,tag:jw8/OUnk2+eYVjsRDxPlIQ==,type:bool]
+      repo: ENC[AES256_GCM,data:mP+dM+yLK+boINyU7vKi/DnGZKHQHfWjydFhakOMoHAutDSASUr1SWfzr5g=,iv:xFAjB943he/lCDJS0NafFVNWUCS1Swdr0A2bldX5ALU=,tag:nEeVB6/UsC8P9dov7bUWQA==,type:str]
+      version: ENC[AES256_GCM,data:KcYCf3IF,iv:HO9vCCuiLToHfg+LrIfpuEAtKRa0Uts+k1NbufsEfjY=,tag:bzgX+iK7thOvByqaMYGoJQ==,type:str]
+      location: ""
+      npm: ENC[AES256_GCM,data:1gXmcQ==,iv:8N3xNvnr8Vkk+5+fqDH3lSzg9sQjXNBGHFAkQLuwfso=,tag:OTgUSVqHLW/PfEGb34i7rg==,type:bool]
+      sass: ENC[AES256_GCM,data:6iy2FQ==,iv:ShhLWrln7a8AQbkhd2DAzuILu5cqH2Uj3TDk/EcMYtc=,tag:fVFYS48RnufynXlYYZzA4g==,type:bool]
+      php: ENC[AES256_GCM,data:MG7DjA==,iv:WaltfqKLT/W+PoYu7LGAusl0yc+uhFn/Rq78X/FyIj0=,tag:R3DSdM0X+bF5PpLooMEjpg==,type:bool]
+      build_command: ENC[AES256_GCM,data:zfb+vNf0Uaz0,iv:6oTXfx6ckDlUmWNCKMcnpVz5ezJ2WbqTRrSjlV3ijQc=,tag:0nomZ1IGlay2vanogtWQlQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB1UU1zaTc4cXJ5L1NFeXl6
+            WENGbWtkY1JXc0x4K1BXQzFKVmZZZzk2UVZZCkhYajF0d0R3cnJRKzFQU3grTzEw
+            SGlyaWVMTlErKzVwLzVuak8xaWpkNWcKLS0tIGRPMjZwdUVDbGZLblYvUGtURFYz
+            bytiUjArMkZ6VmF4VXBPMGFjMTk3NE0KQjLAqqgV9o/MHWpRy7V0XPSqww3nJsMG
+            B38M1WEqz9lkRsUXQ8LWadf3lhGT9QbRZaM2fEwe4yuZC8j7AECQLA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1j653uj3tjln3fut0mg5vlxfz8q66390a70jd29qum04dzzkge5vs55udgn
+    lastmodified: "2026-07-07T16:51:04Z"
+    mac: ENC[AES256_GCM,data:V8nB6LIzszukg0mL4RCV7BTuto0y94oFPW6AF3e/KzeLQcI9DgP0MecvCekq+fBhtqzzXirZfMTPRFF9EYrq+NNEcsi6mdejGgU9tO30nLfjYvYDOHYYm3+NUZ5w69rkhE2j5gJvht2J679TxssnAK5xhx4RW2G+WkoinlaQQsY=,iv:DeWtxeDgCl59LKCBxa0u5Up/blbG9mf40m4FWUUSSDw=,tag:aeekp0TJRlOw7OMz1ib14w==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.13.2

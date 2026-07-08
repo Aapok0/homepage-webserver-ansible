@@ -1,11 +1,14 @@
-# Ignore inventory files to keep IPs secret (committed *.example templates are allowed)
-inventory/*
+# Plaintext secrets/config (committed *.enc files and *.example templates are allowed)
+inventory/production
+inventory/development
+inventory/test
 !inventory/*.example
+!inventory/*.enc
 
-# Ignore host_vars and group_vars (committed *.example.yml templates are allowed)
 host_vars/
-group_vars/*
-!group_vars/*.example.yml
+group_vars/servers/main.yml
+group_vars/servers/firewall_allowed_ips.yml
+group_vars/nginx.yml
 
 # Local Ansible / ansible-lint runtime artifacts
 .ansible/
